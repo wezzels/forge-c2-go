@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`event schema validate relocation response validate relocation response 1`] = `
+{
+  "error": [ZodError: [
+  {
+    "code": "custom",
+    "message": "zz > 0",
+    "path": [
+      "locationSolutions",
+      0,
+      "locationUncertainty",
+      "zz"
+    ]
+  },
+  {
+    "code": "custom",
+    "message": "zz > 0",
+    "path": [
+      "locationSolutions",
+      1,
+      "locationUncertainty",
+      "zz"
+    ]
+  }
+]],
+  "success": false,
+}
+`;

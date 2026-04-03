@@ -1,0 +1,1 @@
+{"version":3,"file":"types.d.ts","sourceRoot":"","sources":["../../../../../../src/ts/components/weavess-waveform-display/components/axes/time-range/types.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,mBAAmB,CAAC;AAEtD,MAAM,WAAW,cAAc;IAC7B,YAAY,CAAC,EAAE,MAAM,CAAC;IACtB,mBAAmB,EAAE,YAAY,CAAC,SAAS,CAAC;CAC7C"}

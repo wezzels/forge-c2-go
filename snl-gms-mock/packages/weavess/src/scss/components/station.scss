@@ -1,0 +1,10 @@
+.station {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+}
+
+.station-thick-border {
+  border-bottom: 3px solid #5f6b7c;
+}

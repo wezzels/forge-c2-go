@@ -1,0 +1,248 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NonIdealStateWithNavigationButtons renders correctly 1`] = `
+{
+  "asFragment": [Function],
+  "baseElement": <body>
+    <div>
+      <div
+        class="non-ideal-state-with-navigation-buttons-container"
+      >
+        <div
+          class="measurement-mode-window-label"
+        >
+          <div
+            class="label-channel-name-row non-ideal-state"
+          >
+            <span
+              class="station-name"
+            >
+               
+            </span>
+            <span
+              class="station-name__channel-name"
+            >
+               
+            </span>
+            <span
+              class="station-name__label-icon"
+            />
+          </div>
+          <div
+            class="label-measurement-row non-ideal-state"
+          >
+            <span
+              class="amplitude-type"
+            >
+               
+            </span>
+            <span
+              class="period-label"
+            >
+               
+            </span>
+          </div>
+          <div
+            class="measure-mode-label__buttons non-ideal-state"
+          >
+            <button
+              class="bp5-button previous-button"
+              title="Review the previous required phase"
+              type="button"
+            >
+              <span
+                class="bp5-button-text"
+              >
+                Prev
+              </span>
+            </button>
+            <button
+              class="bp5-button next-button"
+              title="Review the next required phase"
+              type="button"
+            >
+              <span
+                class="bp5-button-text"
+              >
+                Next
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          class="bp5-non-ideal-state bp5-non-ideal-state-vertical"
+        >
+          <div
+            class="bp5-non-ideal-state-visual"
+            style="font-size: 48px; line-height: 48px;"
+          >
+            <span
+              aria-hidden="true"
+              class="bp5-icon bp5-icon-error bp5-icon-muted"
+              data-icon="error"
+              tabindex="-1"
+            />
+          </div>
+          <div
+            class="bp5-non-ideal-state-text"
+          >
+            <h4
+              class="bp5-heading"
+            >
+              Watch out!
+            </h4>
+            <div>
+              for that tree
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>,
+  "container": <div>
+    <div
+      class="non-ideal-state-with-navigation-buttons-container"
+    >
+      <div
+        class="measurement-mode-window-label"
+      >
+        <div
+          class="label-channel-name-row non-ideal-state"
+        >
+          <span
+            class="station-name"
+          >
+             
+          </span>
+          <span
+            class="station-name__channel-name"
+          >
+             
+          </span>
+          <span
+            class="station-name__label-icon"
+          />
+        </div>
+        <div
+          class="label-measurement-row non-ideal-state"
+        >
+          <span
+            class="amplitude-type"
+          >
+             
+          </span>
+          <span
+            class="period-label"
+          >
+             
+          </span>
+        </div>
+        <div
+          class="measure-mode-label__buttons non-ideal-state"
+        >
+          <button
+            class="bp5-button previous-button"
+            title="Review the previous required phase"
+            type="button"
+          >
+            <span
+              class="bp5-button-text"
+            >
+              Prev
+            </span>
+          </button>
+          <button
+            class="bp5-button next-button"
+            title="Review the next required phase"
+            type="button"
+          >
+            <span
+              class="bp5-button-text"
+            >
+              Next
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        class="bp5-non-ideal-state bp5-non-ideal-state-vertical"
+      >
+        <div
+          class="bp5-non-ideal-state-visual"
+          style="font-size: 48px; line-height: 48px;"
+        >
+          <span
+            aria-hidden="true"
+            class="bp5-icon bp5-icon-error bp5-icon-muted"
+            data-icon="error"
+            tabindex="-1"
+          />
+        </div>
+        <div
+          class="bp5-non-ideal-state-text"
+        >
+          <h4
+            class="bp5-heading"
+          >
+            Watch out!
+          </h4>
+          <div>
+            for that tree
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>,
+  "debug": [Function],
+  "findAllByAltText": [Function],
+  "findAllByDisplayValue": [Function],
+  "findAllByLabelText": [Function],
+  "findAllByPlaceholderText": [Function],
+  "findAllByRole": [Function],
+  "findAllByTestId": [Function],
+  "findAllByText": [Function],
+  "findAllByTitle": [Function],
+  "findByAltText": [Function],
+  "findByDisplayValue": [Function],
+  "findByLabelText": [Function],
+  "findByPlaceholderText": [Function],
+  "findByRole": [Function],
+  "findByTestId": [Function],
+  "findByText": [Function],
+  "findByTitle": [Function],
+  "getAllByAltText": [Function],
+  "getAllByDisplayValue": [Function],
+  "getAllByLabelText": [Function],
+  "getAllByPlaceholderText": [Function],
+  "getAllByRole": [Function],
+  "getAllByTestId": [Function],
+  "getAllByText": [Function],
+  "getAllByTitle": [Function],
+  "getByAltText": [Function],
+  "getByDisplayValue": [Function],
+  "getByLabelText": [Function],
+  "getByPlaceholderText": [Function],
+  "getByRole": [Function],
+  "getByTestId": [Function],
+  "getByText": [Function],
+  "getByTitle": [Function],
+  "queryAllByAltText": [Function],
+  "queryAllByDisplayValue": [Function],
+  "queryAllByLabelText": [Function],
+  "queryAllByPlaceholderText": [Function],
+  "queryAllByRole": [Function],
+  "queryAllByTestId": [Function],
+  "queryAllByText": [Function],
+  "queryAllByTitle": [Function],
+  "queryByAltText": [Function],
+  "queryByDisplayValue": [Function],
+  "queryByLabelText": [Function],
+  "queryByPlaceholderText": [Function],
+  "queryByRole": [Function],
+  "queryByTestId": [Function],
+  "queryByText": [Function],
+  "queryByTitle": [Function],
+  "rerender": [Function],
+  "unmount": [Function],
+}
+`;

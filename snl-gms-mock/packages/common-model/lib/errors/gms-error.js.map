@@ -1,0 +1,1 @@
+{"version":3,"file":"gms-error.js","sourceRoot":"","sources":["../../src/ts/errors/gms-error.ts"],"names":[],"mappings":"AAAA,MAAM,OAAO,QAAS,SAAQ,KAAK;IACjB,EAAE,CAAS;IAE3B,YAAmB,OAAe,EAAE,KAAa,OAAO;QACtD,KAAK,CAAC,OAAO,CAAC,CAAC;QACf,MAAM,CAAC,cAAc,CAAC,IAAI,EAAE,QAAQ,CAAC,SAAS,CAAC,CAAC;QAChD,IAAI,CAAC,EAAE,GAAG,EAAE,CAAC;IACf,CAAC;CACF"}

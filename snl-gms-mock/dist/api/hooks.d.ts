@@ -1,0 +1,9 @@
+export declare const useStations: (startTime: number, endTime: number) => import("@tanstack/react-query").UseQueryResult<any, Error>;
+export declare const useEvents: (startTime: number, endTime: number) => import("@tanstack/react-query").UseQueryResult<any, Error>;
+export declare const useEventStatus: (stageId: string, eventIds: string[]) => import("@tanstack/react-query").UseQueryResult<any, Error>;
+export declare const useSignalDetections: (startTime: number, endTime: number, stationIds: string[]) => import("@tanstack/react-query").UseQueryResult<any, Error>;
+export declare const useChannelSegments: (channelIds: string[], startTime: number, endTime: number) => import("@tanstack/react-query").UseQueryResult<any, Error>;
+export declare const useStageIntervals: (stageIds: string[], startTime: number, endTime: number) => import("@tanstack/react-query").UseQueryResult<any, Error>;
+export declare const useCreateEvent: () => import("@tanstack/react-query").UseMutationResult<import("axios").AxiosResponse<any, any, {}>, Error, any, unknown>;
+export declare const useCreateSignalDetection: () => import("@tanstack/react-query").UseMutationResult<import("axios").AxiosResponse<any, any, {}>, Error, any, unknown>;
+//# sourceMappingURL=hooks.d.ts.map

@@ -1,0 +1,189 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test station util can find parent and child channels 1`] = `
+{
+  "height": 24.8,
+  "id": "AKASG.AKASG.HHZ",
+  "isSelected": false,
+  "name": "name",
+  "timeOffsetSeconds": 0,
+  "waveform": {
+    "channelSegmentId": "unfiltered",
+    "channelSegmentsRecord": {},
+    "markers": {
+      "verticalMarkers": [
+        {
+          "color": "#fff",
+          "id": "startTime",
+          "lineStyle": "solid",
+          "timeSecs": 1274392801,
+        },
+        {
+          "color": "#fff",
+          "id": "endTime",
+          "lineStyle": "solid",
+          "timeSecs": 1274400000,
+        },
+      ],
+    },
+    "masks": [],
+    "signalDetections": [],
+  },
+}
+`;
+
+exports[`test station util can find parent and child channels 2`] = `
+{
+  "height": 24.8,
+  "id": "AKASG",
+  "isSelected": false,
+  "name": "name",
+  "timeOffsetSeconds": 0,
+  "waveform": {
+    "channelSegmentId": "unfiltered",
+    "channelSegmentsRecord": {
+      "Unfiltered": [
+        {
+          "channelName": "AKASG.beam.BHZ/beam,fk,coherent/steer,az_183.370deg,slow_6.976s_per_deg/29c996d7a77486a61cf974acb6d1ae2f717768b2ca32ff4573159c089d4e9e5c",
+          "configuredInputName": "{"channel":{"name":"AKASG.beam.BHZ/beam,fk,coherent/steer,az_183.370deg,slow_6.976s_per_deg/29c996d7a77486a61cf974acb6d1ae2f717768b2ca32ff4573159c089d4e9e5c","effectiveAt":1696951279.45},"startTime":1696951279.45,"endTime":1696951579.425,"creationTime":1696951279.45}",
+          "dataSegments": [
+            {
+              "color": "#4580e6",
+              "data": {
+                "domainTimeRange": {
+                  "endTimeSecs": 1696953600,
+                  "startTimeSecs": 1696950000,
+                },
+                "endTimeSecs": 1696951579.425,
+                "id": "{"domain":{"startTimeSecs":1696950000,"endTimeSecs":1696953600},"id":{"channel":{"effectiveAt":1696951279.45,"name":"AKASG.beam.BHZ/beam,fk,coherent/steer,az_183.370deg,slow_6.976s_per_deg/29c996d7a77486a61cf974acb6d1ae2f717768b2ca32ff4573159c089d4e9e5c"},"startTime":1696951279.45,"endTime":1696951579.425,"creationTime":1696951279.45},"type":"WAVEFORM","filter":"Unfiltered","waveform":{"type":"WAVEFORM","startTime":1696951279.45,"endTime":1696951579.425,"sampleCount":12000,"sampleRateHz":40}}",
+                "sampleRate": 40,
+                "startTimeSecs": 1696951279.45,
+                "values": [],
+              },
+              "displayType": [
+                "LINE",
+              ],
+              "pointSize": 1,
+            },
+          ],
+          "description": "Unfiltered",
+          "descriptionLabelColor": "#f5f8fa",
+          "isSelected": false,
+          "timeseriesType": "WAVEFORM",
+          "units": "NANOMETERS",
+          "wfFilterId": "Unfiltered",
+        },
+        {
+          "channelName": "AKASG.beam.BHZ/beam,fk,coherent/steer,az_177.922deg,slow_9.413s_per_deg/6e4b3e5a2b63c3cbd569e364df3b05425dbb1821c8c583ba972da0fbfb2de1d7",
+          "configuredInputName": "AKASG.beam.BHZ/beam,fk,coherent/steer,az_177.922deg,slow_9.413s_per_deg/6e4b3e5a2b63c3cbd569e364df3b05425dbb1821c8c583ba972da0fbfb2de1d7",
+          "dataSegments": [
+            {
+              "color": "#4580e6",
+              "data": {
+                "domainTimeRange": {
+                  "endTimeSecs": 1696953600,
+                  "startTimeSecs": 1696950000,
+                },
+                "endTimeSecs": 1696954590.65,
+                "id": "{"domain":{"startTimeSecs":1696950000,"endTimeSecs":1696953600},"id":{"channel":{"effectiveAt":1696954290.675,"name":"AKASG.beam.BHZ/beam,fk,coherent/steer,az_177.922deg,slow_9.413s_per_deg/6e4b3e5a2b63c3cbd569e364df3b05425dbb1821c8c583ba972da0fbfb2de1d7"},"startTime":1696954290.675,"endTime":1696954590.65,"creationTime":1696954290.675},"type":"WAVEFORM","filter":"Unfiltered","waveform":{"type":"WAVEFORM","startTime":1696954290.675,"endTime":1696954590.65,"sampleCount":12000,"sampleRateHz":40}}",
+                "sampleRate": 40,
+                "startTimeSecs": 1696954290.675,
+                "values": [],
+              },
+              "displayType": [
+                "LINE",
+              ],
+              "pointSize": 1,
+            },
+          ],
+          "description": "Unfiltered",
+          "descriptionLabelColor": "#f5f8fa",
+          "isSelected": false,
+          "timeseriesType": "WAVEFORM",
+          "units": "NANOMETERS",
+          "wfFilterId": "Unfiltered",
+        },
+        {
+          "channelName": "AKASG.beam.BHZ/beam,fk,coherent/steer,az_36.958deg,slow_3.440s_per_deg/e7834155029d2a0c57c3b0396070ab04fc33e84d728a894a451f1409e5a4cc08",
+          "configuredInputName": "AKASG.beam.BHZ/beam,fk,coherent/steer,az_36.958deg,slow_3.440s_per_deg/e7834155029d2a0c57c3b0396070ab04fc33e84d728a894a451f1409e5a4cc08",
+          "dataSegments": [
+            {
+              "color": "#4580e6",
+              "data": {
+                "domainTimeRange": {
+                  "endTimeSecs": 1696953600,
+                  "startTimeSecs": 1696950000,
+                },
+                "endTimeSecs": 1696954725.925,
+                "id": "{"domain":{"startTimeSecs":1696950000,"endTimeSecs":1696953600},"id":{"channel":{"effectiveAt":1696954425.95,"name":"AKASG.beam.BHZ/beam,fk,coherent/steer,az_36.958deg,slow_3.440s_per_deg/e7834155029d2a0c57c3b0396070ab04fc33e84d728a894a451f1409e5a4cc08"},"startTime":1696954425.95,"endTime":1696954725.925,"creationTime":1696954425.95},"type":"WAVEFORM","filter":"Unfiltered","waveform":{"type":"WAVEFORM","startTime":1696954425.95,"endTime":1696954725.925,"sampleCount":12000,"sampleRateHz":40}}",
+                "sampleRate": 40,
+                "startTimeSecs": 1696954425.95,
+                "values": [],
+              },
+              "displayType": [
+                "LINE",
+              ],
+              "pointSize": 1,
+            },
+          ],
+          "description": "Unfiltered",
+          "descriptionLabelColor": "#f5f8fa",
+          "isSelected": false,
+          "timeseriesType": "WAVEFORM",
+          "units": "NANOMETERS",
+          "wfFilterId": "Unfiltered",
+        },
+        {
+          "channelName": "AKASG.beam.BHZ/beam,fk,coherent/steer,az_21.481deg,slow_5.853s_per_deg/fd812051f929567ff5ed6b96613a2930e309578d55b571ceaf8fc3f39557bc0e",
+          "configuredInputName": "AKASG.beam.BHZ/beam,fk,coherent/steer,az_21.481deg,slow_5.853s_per_deg/fd812051f929567ff5ed6b96613a2930e309578d55b571ceaf8fc3f39557bc0e",
+          "dataSegments": [
+            {
+              "color": "#4580e6",
+              "data": {
+                "domainTimeRange": {
+                  "endTimeSecs": 1696953600,
+                  "startTimeSecs": 1696950000,
+                },
+                "endTimeSecs": 1696953772.75,
+                "id": "{"domain":{"startTimeSecs":1696950000,"endTimeSecs":1696953600},"id":{"channel":{"effectiveAt":1696953472.775,"name":"AKASG.beam.BHZ/beam,fk,coherent/steer,az_21.481deg,slow_5.853s_per_deg/fd812051f929567ff5ed6b96613a2930e309578d55b571ceaf8fc3f39557bc0e"},"startTime":1696953472.775,"endTime":1696953772.75,"creationTime":1696953472.775},"type":"WAVEFORM","filter":"Unfiltered","waveform":{"type":"WAVEFORM","startTime":1696953472.775,"endTime":1696953772.75,"sampleCount":12000,"sampleRateHz":40}}",
+                "sampleRate": 40,
+                "startTimeSecs": 1696953472.775,
+                "values": [],
+              },
+              "displayType": [
+                "LINE",
+              ],
+              "pointSize": 1,
+            },
+          ],
+          "description": "Unfiltered",
+          "descriptionLabelColor": "#f5f8fa",
+          "isSelected": false,
+          "timeseriesType": "WAVEFORM",
+          "units": "NANOMETERS",
+          "wfFilterId": "Unfiltered",
+        },
+      ],
+    },
+    "markers": {
+      "selectionWindows": [],
+      "verticalMarkers": [
+        {
+          "color": "#fff",
+          "id": "startTime",
+          "lineStyle": "solid",
+          "timeSecs": 1274392801,
+        },
+        {
+          "color": "#fff",
+          "id": "endTime",
+          "lineStyle": "solid",
+          "timeSecs": 1274400000,
+        },
+      ],
+    },
+    "predictedPhases": [],
+    "signalDetections": [],
+  },
+}
+`;

@@ -1,0 +1,1 @@
+{"version":3,"file":"custom-hooks.d.ts","sourceRoot":"","sources":["../../src/ts/util/custom-hooks.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAE1B;;;;GAIG;AACH,eAAO,MAAM,cAAc,aAChB;IAAE,CAAC,EAAE,MAAM,CAAC;IAAC,CAAC,EAAE,MAAM,CAAA;CAAE;mBAElB,MAAM;yBACA,UAAU,KAAK,IAAI;eAC7B,MAAM,QAAQ,CAAC,MAAM,cAAc,CAAC,MAAM,CAAC,CAAC;YAC/C,MAAM;YACN,MAAM;CAyBf,CAAC"}

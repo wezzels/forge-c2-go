@@ -1,0 +1,1 @@
+{"version":3,"file":"browser-max-resolution-checker.d.ts","sourceRoot":"","sources":["../../src/ts/util/browser-max-resolution-checker.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAE1B;;GAEG;AACH,MAAM,WAAW,gCAAgC;IAC/C,SAAS,EAAE,MAAM,CAAC;IAClB,uBAAuB,EAAE,CAAC,OAAO,EAAE,MAAM,KAAK,IAAI,CAAC;CACpD;AAcD;;GAEG;AACH,eAAO,MAAM,2BAA2B,8DA+EtC,CAAC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"example-events.d.ts","sourceRoot":"","sources":["../../src/ts/examples/example-events.tsx"],"names":[],"mappings":"AAKA,OAAO,KAAK,MAAM,OAAO,CAAC;AAE1B,OAAO,EAAE,OAAO,EAAE,MAAM,YAAY,CAAC;AAKrC,qBAAa,aAAc,SAAQ,KAAK,CAAC,SAAS,CAAC,OAAO,EAAE,OAAO,CAAC;IAC3D,OAAO,EAAE,OAAO,CAAC;IAEjB,MAAM,IAAI,GAAG,CAAC,OAAO;CAmE7B"}

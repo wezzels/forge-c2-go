@@ -1,0 +1,35 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: kafka-pool
+  namespace: gms
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: ephemeral
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: kafka-cluster
+  namespace: gms
+spec:
+  kafka:
+    version: 4.2.0
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      num.partitions: 6
+      default.replication-factor: 3
+      min.insync.replicas: 2
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2

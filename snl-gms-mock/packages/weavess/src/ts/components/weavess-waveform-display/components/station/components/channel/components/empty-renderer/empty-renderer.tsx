@@ -1,0 +1,47 @@
+import React from 'react';
+import * as THREE from 'three';
+
+import type { EmptyRendererProps } from './types';
+
+/**
+ * Empty component. Renders and displays an empty graphics data.
+ */
+export class EmptyRenderer extends React.PureComponent<EmptyRendererProps, never> {
+  /** THREE.Scene for this channel */
+  public scene: THREE.Scene;
+
+  /** Orthographic camera used to zoom/pan around the spectrogram */
+  public camera: THREE.OrthographicCamera;
+
+  /** Current min in gl units */
+  private readonly glMin = 0;
+
+  /** Current max in gl units */
+  private readonly glMax = 100;
+
+  // ******************************************
+  // BEGIN REACT COMPONENT LIFECYCLE METHODS
+  // ******************************************
+
+  /**
+   * Called immediately after a component is mounted.
+   * Setting state here will trigger re-rendering.
+   */
+  public componentDidMount(): void {
+    this.scene = new THREE.Scene();
+    const cameraZDepth = 5;
+    this.camera = new THREE.OrthographicCamera(
+      this.glMin,
+      this.glMax,
+      1,
+      -1,
+      cameraZDepth,
+      -cameraZDepth
+    );
+    this.camera.position.z = 0;
+  }
+
+  public render() {
+    return null;
+  }
+}

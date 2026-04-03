@@ -1,0 +1,1 @@
+{"version":3,"file":"activity-definition.js","sourceRoot":"","sources":["../../../src/ts/workflow/activity-definition/activity-definition.ts"],"names":[],"mappings":"AAsCA;;;GAGG;AACH,MAAM,UAAU,wBAAwB,CACtC,MAA0B;IAE1B,IAAI,MAAM,CAAC,IAAI,CAAC,MAAM,CAAC,CAAC,QAAQ,CAAC,wBAAwB,CAAC;QAAE,OAAO,IAAI,CAAC;IACxE,OAAO,KAAK,CAAC;AACf,CAAC"}

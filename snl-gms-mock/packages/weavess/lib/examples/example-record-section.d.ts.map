@@ -1,0 +1,1 @@
+{"version":3,"file":"example-record-section.d.ts","sourceRoot":"","sources":["../../src/ts/examples/example-record-section.tsx"],"names":[],"mappings":"AAEA,OAAO,KAAK,MAAM,OAAO,CAAC;AAE1B,OAAO,EAAE,oBAAoB,EAAE,MAAM,YAAY,CAAC;AAGlD,qBAAa,oBAAqB,SAAQ,KAAK,CAAC,SAAS,CAAC,OAAO,EAAE,OAAO,CAAC;IAClE,aAAa,EAAE,oBAAoB,CAAC;IAGpC,MAAM,IAAI,GAAG,CAAC,OAAO;IAcrB,iBAAiB,IAAI,IAAI;CA8EjC"}
