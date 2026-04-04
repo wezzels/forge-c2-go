@@ -1,7 +1,6 @@
 package jreap
 
 import (
-	"encoding/binary"
 	"fmt"
 	"time"
 )
@@ -102,13 +101,21 @@ func (d *Decoder) unpackOPIRMessage(payload []byte) (*DecodedOPIRMessage, error)
 		return nil, fmt.Errorf("payload too small for OPIR: %d bytes", len(payload))
 	}
 
+	// Manual big-endian decode
+	trackNum := uint16(payload[0])<<8 | uint16(payload[1])
+	ms := uint32(payload[2])<<24 | uint32(payload[3])<<16 | uint32(payload[4])<<8 | uint32(payload[5])
+	latVal := uint32(payload[6])<<16 | uint32(payload[7])<<8 | uint32(payload[8])
+	lonVal := uint32(payload[9])<<16 | uint32(payload[10])<<8 | uint32(payload[11])
+	altVal := uint32(payload[12])<<16 | uint32(payload[13])<<8 | uint32(payload[14])
+	irVal := uint16(payload[15])<<8 | uint16(payload[16])
+
 	return &DecodedOPIRMessage{
-		TrackNumber: binary.BigEndian.Uint16(payload[0:2]),
-		Timestamp:   time.UnixMilli(int64(binary.BigEndian.Uint32(payload[2:6]))).UTC(),
-		Latitude:    (float64(int32(binary.BigEndian.Uint32(payload[6:9])&0xFFFFFF)) / float64(0xFFFFFF) * 180.0) - 90.0,
-		Longitude:   (float64(int32(binary.BigEndian.Uint32(payload[9:12])&0xFFFFFF)) / float64(0xFFFFFF) * 360.0) - 180.0,
-		Altitude:    float64(binary.BigEndian.Uint32(payload[12:15])),
-		IRIntensity: float64(binary.BigEndian.Uint16(payload[15:17])) / 10.0,
+		TrackNumber: trackNum,
+		Timestamp:   time.UnixMilli(int64(ms)).UTC(),
+		Latitude:    (float64(latVal)/float64(0xFFFFFF))*180.0 - 90.0,
+		Longitude:   (float64(lonVal)/float64(0xFFFFFF))*360.0 - 180.0,
+		Altitude:    float64(altVal),
+		IRIntensity: float64(irVal) / 10.0,
 	}, nil
 }
 
@@ -118,14 +125,23 @@ func (d *Decoder) unpackTrackUpdate(payload []byte) (*DecodedTrackUpdate, error)
 		return nil, fmt.Errorf("payload too small for track update: %d bytes", len(payload))
 	}
 
+	// Manual big-endian decode
+	trackNum := uint16(payload[0])<<8 | uint16(payload[1])
+	ms := uint32(payload[2])<<24 | uint32(payload[3])<<16 | uint32(payload[4])<<8 | uint32(payload[5])
+	latVal := uint32(payload[6])<<16 | uint32(payload[7])<<8 | uint32(payload[8])
+	lonVal := uint32(payload[9])<<16 | uint32(payload[10])<<8 | uint32(payload[11])
+	altVal := uint32(payload[12])<<16 | uint32(payload[13])<<8 | uint32(payload[14])
+	speedVal := uint16(payload[15])<<8 | uint16(payload[16])
+	headingVal := uint16(payload[17])<<8 | uint16(payload[18])
+
 	return &DecodedTrackUpdate{
-		TrackNumber: binary.BigEndian.Uint16(payload[0:2]),
-		Timestamp:   time.UnixMilli(int64(binary.BigEndian.Uint32(payload[2:6]))).UTC(),
-		Latitude:    (float64(int32(binary.BigEndian.Uint32(payload[6:9])&0xFFFFFF)) / float64(0xFFFFFF) * 180.0) - 90.0,
-		Longitude:   (float64(int32(binary.BigEndian.Uint32(payload[9:12])&0xFFFFFF)) / float64(0xFFFFFF) * 360.0) - 180.0,
-		Altitude:    float64(binary.BigEndian.Uint32(payload[12:15])),
-		Speed:       float64(binary.BigEndian.Uint16(payload[15:17])) / 10.0,
-		Heading:     float64(binary.BigEndian.Uint16(payload[17:19])) / 100.0,
+		TrackNumber: trackNum,
+		Timestamp:   time.UnixMilli(int64(ms)).UTC(),
+		Latitude:    (float64(latVal)/float64(0xFFFFFF))*180.0 - 90.0,
+		Longitude:   (float64(lonVal)/float64(0xFFFFFF))*360.0 - 180.0,
+		Altitude:    float64(altVal),
+		Speed:       float64(speedVal) / 10.0,
+		Heading:     float64(headingVal) / 100.0,
 		Status:      decodeTrackStatus(payload[19]),
 		ThreatLevel: int(payload[20]),
 	}, nil
@@ -137,11 +153,15 @@ func (d *Decoder) unpackEngagementOrder(payload []byte) (*DecodedEngagementOrder
 		return nil, fmt.Errorf("payload too small for engagement order: %d bytes", len(payload))
 	}
 
+	// Manual big-endian decode
+	tot := uint32(payload[8])<<24 | uint32(payload[9])<<16 | uint32(payload[10])<<8 | uint32(payload[11])
+	probVal := uint16(payload[12])<<8 | uint16(payload[13])
+
 	return &DecodedEngagementOrder{
 		Priority:      int(payload[6]),
 		WeaponSystem:  decodeWeapon(payload[7]),
-		TimeOnTarget:  time.UnixMilli(int64(binary.BigEndian.Uint32(payload[8:12]))).UTC(),
-		InterceptProb: float64(binary.BigEndian.Uint16(payload[12:14])) / 10000.0,
+		TimeOnTarget:  time.UnixMilli(int64(tot)).UTC(),
+		InterceptProb: float64(probVal) / 10000.0,
 		Status:        decodeEngagementStatus(payload[14]),
 	}, nil
 }
