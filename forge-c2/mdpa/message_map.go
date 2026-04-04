@@ -2,8 +2,6 @@ package mdpa
 
 import (
 	"fmt"
-
-	"forge-c2/jreap"
 )
 
 // MessageCategory categorizes FORGE/MDPAF messages by functional area.
@@ -32,6 +30,49 @@ func (c MessageCategory) String() string {
 		return "Network Management"
 	default:
 		return "Unknown"
+	}
+}
+
+// JSeriesType represents a J-series message type number.
+// These values are defined per MIL-STD-6016.
+type JSeriesType uint8
+
+// J-series message type constants (per MIL-STD-6016).
+const (
+	J3_TrackUpdate       JSeriesType = 3  // Track Update (J3.0)
+	J4_EngagementOrder  JSeriesType = 4  // Engagement Order (J6.0)
+	J5_EngagementStatus JSeriesType = 5  // Engagement Status (J6.5)
+	J6_SensorRegistration JSeriesType = 6  // Sensor Registration (J7.1)
+	J12_Alert           JSeriesType = 12 // Alert/Notification (J2.0)
+	J15_Command         JSeriesType = 15 // Command
+	J18_SpaceTrack      JSeriesType = 18 // Space Track (J18.x)
+	J28_SatelliteOPIR   JSeriesType = 28 // Satellite / OPIR Track (J18.x extended)
+	J2_Surveillance     JSeriesType = 2  // Surveillance/Fusion
+)
+
+// String returns the J-series type name.
+func (j JSeriesType) String() string {
+	switch j {
+	case J2_Surveillance:
+		return "J2-Surveillance"
+	case J3_TrackUpdate:
+		return "J3-TrackUpdate"
+	case J4_EngagementOrder:
+		return "J4-EngagementOrder"
+	case J5_EngagementStatus:
+		return "J5-EngagementStatus"
+	case J6_SensorRegistration:
+		return "J6-SensorRegistration"
+	case J12_Alert:
+		return "J12-Alert"
+	case J15_Command:
+		return "J15-Command"
+	case J18_SpaceTrack:
+		return "J18-SpaceTrack"
+	case J28_SatelliteOPIR:
+		return "J28-SatelliteOPIR"
+	default:
+		return fmt.Sprintf("J%d-Unknown", j)
 	}
 }
 
@@ -87,7 +128,7 @@ func (f ForgeMessageType) String() string {
 // and provides additional mapping metadata.
 type JSeriesMapping struct {
 	ForgeType      ForgeMessageType
-	JSeriesType    jreap.MessageType
+	JSeriesType    JSeriesType
 	Category       MessageCategory
 	Description    string
 	RequiredFields []string // List of required J-series fields for this message type
@@ -115,7 +156,7 @@ var forgeToJSeriesMap = map[ForgeMessageType]*JSeriesMapping{
 	// OPIR Processing
 	ForgeOPIRRawData: {
 		ForgeType:      ForgeOPIRRawData,
-		JSeriesType:    jreap.J28_SatelliteOPIR,
+		JSeriesType:    J28_SatelliteOPIR,
 		Category:       CategoryOPIR,
 		Description:    "Raw OPIR satellite data - mapped to J18.x Space Track",
 		RequiredFields: []string{"SatelliteID", "TimeStamp", "Latitude", "Longitude", "IRIntensity"},
@@ -124,28 +165,28 @@ var forgeToJSeriesMap = map[ForgeMessageType]*JSeriesMapping{
 	// Track Management
 	ForgeTrackInit: {
 		ForgeType:      ForgeTrackInit,
-		JSeriesType:    jreap.J3_TrackUpdate,
+		JSeriesType:    J3_TrackUpdate,
 		Category:       CategoryTrackManagement,
 		Description:    "Track initiation - mapped to J3.0 Track Update",
 		RequiredFields: []string{"TrackNumber", "Latitude", "Longitude", "Altitude", "TimeStamp"},
 	},
 	ForgeTrackUpdate: {
 		ForgeType:      ForgeTrackUpdate,
-		JSeriesType:    jreap.J3_TrackUpdate,
+		JSeriesType:    J3_TrackUpdate,
 		Category:       CategoryTrackManagement,
 		Description:    "Track update - mapped to J3.0 Track Update",
 		RequiredFields: []string{"TrackNumber", "Latitude", "Longitude", "Altitude", "Speed", "Heading", "TimeStamp"},
 	},
 	ForgeTrackFusion: {
 		ForgeType:      ForgeTrackFusion,
-		JSeriesType:    jreap.J2_Surveillance,
+		JSeriesType:    J2_Surveillance,
 		Category:       CategoryTrackManagement,
 		Description:    "Fused track - mapped to J2.x Surveillance/Fusion track",
 		RequiredFields: []string{"TrackNumber", "Latitude", "Longitude", "Altitude", "ForceType", "TimeStamp"},
 	},
 	ForgeSpaceTrack: {
 		ForgeType:      ForgeSpaceTrack,
-		JSeriesType:    jreap.J18_SpaceTrack,
+		JSeriesType:    J18_SpaceTrack,
 		Category:       CategoryTrackManagement,
 		Description:    "Space/satellite track - mapped to J18.x Space Track",
 		RequiredFields: []string{"TrackNumber", "Latitude", "Longitude", "Altitude", "Velocity", "TimeStamp"},
@@ -154,14 +195,14 @@ var forgeToJSeriesMap = map[ForgeMessageType]*JSeriesMapping{
 	// Engagement Management
 	ForgeEngagementOrder: {
 		ForgeType:      ForgeEngagementOrder,
-		JSeriesType:    jreap.J4_EngagementOrder,
+		JSeriesType:    J4_EngagementOrder,
 		Category:       CategoryEngagement,
 		Description:    "Engagement order - mapped to J6.0 Engagement Order",
 		RequiredFields: []string{"EngagementID", "TrackNumber", "WeaponOrder", "Priority", "TimeOnTarget"},
 	},
 	ForgeEngagementStatus: {
 		ForgeType:      ForgeEngagementStatus,
-		JSeriesType:    jreap.J5_EngagementStatus,
+		JSeriesType:    J5_EngagementStatus,
 		Category:       CategoryEngagement,
 		Description:    "Engagement status - mapped to J6.5 Engagement Status",
 		RequiredFields: []string{"EngagementID", "TrackNumber", "Status", "Result"},
@@ -170,14 +211,14 @@ var forgeToJSeriesMap = map[ForgeMessageType]*JSeriesMapping{
 	// Alert Dissemination
 	ForgeAlertLaunch: {
 		ForgeType:      ForgeAlertLaunch,
-		JSeriesType:    jreap.J12_Alert,
+		JSeriesType:    J12_Alert,
 		Category:       CategoryAlert,
 		Description:    "Launch detection alert - mapped to J2.0 Alert/Notification",
 		RequiredFields: []string{"AlertID", "TrackNumber", "AlertType", "Severity", "TimeStamp"},
 	},
 	ForgeAlertThreat: {
 		ForgeType:      ForgeAlertThreat,
-		JSeriesType:    jreap.J12_Alert,
+		JSeriesType:    J12_Alert,
 		Category:       CategoryAlert,
 		Description:    "Threat confirmation alert - mapped to J2.0 Alert/Notification",
 		RequiredFields: []string{"AlertID", "TrackNumber", "AlertType", "Severity", "Confidence", "TimeStamp"},
@@ -186,14 +227,14 @@ var forgeToJSeriesMap = map[ForgeMessageType]*JSeriesMapping{
 	// Network Management
 	ForgeSensorRegister: {
 		ForgeType:      ForgeSensorRegister,
-		JSeriesType:    jreap.J6_SensorRegistration,
+		JSeriesType:    J6_SensorRegistration,
 		Category:       CategoryNetwork,
 		Description:    "Sensor registration - mapped to J7.1 Sensor Registration",
 		RequiredFields: []string{"SensorID", "SensorType", "Location", "Capabilities"},
 	},
 	ForgeCommand: {
 		ForgeType:      ForgeCommand,
-		JSeriesType:    jreap.J15_Command,
+		JSeriesType:    J15_Command,
 		Category:       CategoryNetwork,
 		Description:    "C2 command - mapped to J0.x Command",
 		RequiredFields: []string{"CommandID", "CommandType", "TargetID", "Parameters"},
@@ -201,20 +242,20 @@ var forgeToJSeriesMap = map[ForgeMessageType]*JSeriesMapping{
 }
 
 // JSeriesToForgeMapping is the reverse mapping from J-series to FORGE types.
-var JSeriesToForgeMapping = map[jreap.MessageType]ForgeMessageType{
-	jreap.J3_TrackUpdate:       ForgeTrackUpdate,
-	jreap.J2_Surveillance:      ForgeTrackFusion,
-	jreap.J4_EngagementOrder:   ForgeEngagementOrder,
-	jreap.J5_EngagementStatus:  ForgeEngagementStatus,
-	jreap.J6_SensorRegistration: ForgeSensorRegister,
-	jreap.J12_Alert:            ForgeAlertLaunch,
-	jreap.J15_Command:          ForgeCommand,
-	jreap.J18_SpaceTrack:       ForgeSpaceTrack,
-	jreap.J28_SatelliteOPIR:    ForgeOPIRRawData,
+var JSeriesToForgeMapping = map[JSeriesType]ForgeMessageType{
+	J3_TrackUpdate:        ForgeTrackUpdate,
+	J2_Surveillance:      ForgeTrackFusion,
+	J4_EngagementOrder:   ForgeEngagementOrder,
+	J5_EngagementStatus:  ForgeEngagementStatus,
+	J6_SensorRegistration: ForgeSensorRegister,
+	J12_Alert:            ForgeAlertLaunch,
+	J15_Command:          ForgeCommand,
+	J18_SpaceTrack:       ForgeSpaceTrack,
+	J28_SatelliteOPIR:   ForgeOPIRRawData,
 }
 
 // GetForgeType returns the FORGE message type for a J-series type.
-func GetForgeType(jType jreap.MessageType) ForgeMessageType {
+func GetForgeType(jType JSeriesType) ForgeMessageType {
 	if forgeType, ok := JSeriesToForgeMapping[jType]; ok {
 		return forgeType
 	}
@@ -224,7 +265,7 @@ func GetForgeType(jType jreap.MessageType) ForgeMessageType {
 // MessageTypeInfo provides detailed information about a message type.
 type MessageTypeInfo struct {
 	ForgeType   ForgeMessageType
-	JSeriesType jreap.MessageType
+	JSeriesType JSeriesType
 	Category    MessageCategory
 	Description string
 }
@@ -232,16 +273,16 @@ type MessageTypeInfo struct {
 // GetMessageTypeInfo returns detailed information for all message types.
 func GetMessageTypeInfo() []MessageTypeInfo {
 	return []MessageTypeInfo{
-		{ForgeOPIRRawData, jreap.J28_SatelliteOPIR, CategoryOPIR, "Raw OPIR satellite data ingestion"},
-		{ForgeTrackInit, jreap.J3_TrackUpdate, CategoryTrackManagement, "Track initiation from sensor detection"},
-		{ForgeTrackUpdate, jreap.J3_TrackUpdate, CategoryTrackManagement, "Track position/kinematic update"},
-		{ForgeTrackFusion, jreap.J2_Surveillance, CategoryTrackManagement, "Fused track from multiple sensors"},
-		{ForgeEngagementOrder, jreap.J4_EngagementOrder, CategoryEngagement, "Engagement order to weapon system"},
-		{ForgeEngagementStatus, jreap.J5_EngagementStatus, CategoryEngagement, "Engagement status update"},
-		{ForgeSensorRegister, jreap.J6_SensorRegistration, CategoryNetwork, "Sensor capability registration"},
-		{ForgeAlertLaunch, jreap.J12_Alert, CategoryAlert, "Missile launch detection alert"},
-		{ForgeAlertThreat, jreap.J12_Alert, CategoryAlert, "Threat confirmation alert"},
-		{ForgeCommand, jreap.J15_Command, CategoryNetwork, "Command to C2BMC or sensor"},
-		{ForgeSpaceTrack, jreap.J18_SpaceTrack, CategoryTrackManagement, "Space object/satellite track"},
+		{ForgeOPIRRawData, J28_SatelliteOPIR, CategoryOPIR, "Raw OPIR satellite data ingestion"},
+		{ForgeTrackInit, J3_TrackUpdate, CategoryTrackManagement, "Track initiation from sensor detection"},
+		{ForgeTrackUpdate, J3_TrackUpdate, CategoryTrackManagement, "Track position/kinematic update"},
+		{ForgeTrackFusion, J2_Surveillance, CategoryTrackManagement, "Fused track from multiple sensors"},
+		{ForgeEngagementOrder, J4_EngagementOrder, CategoryEngagement, "Engagement order to weapon system"},
+		{ForgeEngagementStatus, J5_EngagementStatus, CategoryEngagement, "Engagement status update"},
+		{ForgeSensorRegister, J6_SensorRegistration, CategoryNetwork, "Sensor capability registration"},
+		{ForgeAlertLaunch, J12_Alert, CategoryAlert, "Missile launch detection alert"},
+		{ForgeAlertThreat, J12_Alert, CategoryAlert, "Threat confirmation alert"},
+		{ForgeCommand, J15_Command, CategoryNetwork, "Command to C2BMC or sensor"},
+		{ForgeSpaceTrack, J18_SpaceTrack, CategoryTrackManagement, "Space object/satellite track"},
 	}
 }
