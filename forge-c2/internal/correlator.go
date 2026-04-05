@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"sync"

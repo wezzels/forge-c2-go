@@ -97,6 +97,13 @@ func (e *Encoder) EncodeJ6(j6 *jseries.J6SensorRegistration) ([]byte, error) {
 	return EncodeFull(buf, uint8(J6_SensorRegistration), CRC16)
 }
 
+// EncodeJ4 encodes a J4 Engagement Order message.
+func (e *Encoder) EncodeJ4(j4 *jseries.J4EngagementOrder) ([]byte, error) {
+	buf := make([]byte, jseries.J4PayloadSize)
+	jseries.PackJ4EngagementOrder(j4, buf)
+	return EncodeFull(buf, uint8(J4_EngagementOrder), CRC16)
+}
+
 // EncodeJ12 encodes a J12 Alert message.
 func (e *Encoder) EncodeJ12(j12 *jseries.J12Alert) ([]byte, error) {
 	buf := make([]byte, jseries.J12PayloadSize)

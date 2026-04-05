@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,15 +12,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"forge-c2/jreap"
 )
 
 // Config holds FORGE-C2 server configuration
 type Config struct {
-	Port           string
-	VIMIBroker     string
-	KafkaBroker    string
-	C2BMCURL      string
-	AllowedOrigins []string
+	Port            string
+	VIMIBroker      string
+	KafkaBroker     string
+	C2BMCURL       string
+	AllowedOrigins  []string
+	JREAPUDP        string // JREAP UDP listen address (e.g. ":5000")
+	JREAPTCP        string // JREAP TCP listen address (e.g. ":5001")
 }
 
 // Server is the main HTTP/WebSocket server
@@ -31,6 +36,7 @@ type Server struct {
 	correlator    *TrackCorrelator
 	kafka         *KafkaBroker
 	c2bmc         *C2BMCInterface
+	jreapConsumer *JREAPConsumer
 	clients       map[*websocket.Conn]bool
 	clientMu      sync.RWMutex
 }
@@ -84,19 +90,20 @@ func (ts *TrackStore) GetAllTracks() []*Track {
 // NewServer creates a new FORGE-C2 server
 func NewServer(cfg *Config) (*Server, error) {
 	s := &Server{
-		config:     cfg,
-		router:     mux.NewRouter(),
-		trackStore: NewTrackStore(),
-		correlator: NewTrackCorrelator(),
-		kafka:      NewKafkaBroker([]string{cfg.KafkaBroker}),
-		c2bmc:      NewC2BMCInterface(cfg.C2BMCURL),
-		clients:    make(map[*websocket.Conn]bool),
+		config:        cfg,
+		router:        mux.NewRouter(),
+		trackStore:    NewTrackStore(),
+		correlator:    NewTrackCorrelator(),
+		kafka:         NewKafkaBroker([]string{cfg.KafkaBroker}),
+		c2bmc:         NewC2BMCInterface(cfg.C2BMCURL),
+		clients:       make(map[*websocket.Conn]bool),
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true // TODO: restrict in production
 			},
 		},
 	}
+	s.jreapConsumer = NewJREAPConsumer(s.correlator, s.c2bmc, s.trackStore)
 	s.setupRoutes()
 	return s, nil
 }
@@ -417,5 +424,77 @@ func (s *Server) handleAlertsWebSocket(w http.ResponseWriter, r *http.Request) {
 			"alerts": alerts,
 		})
 		time.Sleep(5 * time.Second)
+	}
+}
+
+// StartJREAPUDP starts a JREAP UDP listener and feeds messages into the correlator.
+func (s *Server) StartJREAPUDP(addr string) {
+	conn, err := jreap.NewJREAPUDPConn(addr, 8192)
+	if err != nil {
+		log.Printf("[JREAP-UDP] Failed to start: %v", err)
+		return
+	}
+	defer conn.Close()
+	log.Printf("[JREAP-UDP] Listening on %s", addr)
+
+	for {
+		msg, from, err := conn.ReadFromWithTimeout(5 * time.Second)
+		if err != nil {
+			if errors.Is(err, jreap.ErrTimeout) || errors.Is(err, jreap.ErrListenerClosed) {
+				continue
+			}
+			log.Printf("[JREAP-UDP] Read error: %v", err)
+			continue
+		}
+		if msg == nil {
+			continue
+		}
+
+		log.Printf("[JREAP-UDP] Received %d bytes from %s", len(msg), from)
+		if err := s.jreapConsumer.ProcessMessage(msg); err != nil {
+			log.Printf("[JREAP-UDP] Process error: %v", err)
+		}
+	}
+}
+
+// StartJREAPTCP starts a JREAP TCP listener.
+func (s *Server) StartJREAPTCP(addr string) {
+	listener, err := jreap.NewListener(addr, jreap.ProtocolTCP)
+	if err != nil {
+		log.Printf("[JREAP-TCP] Failed to start: %v", err)
+		return
+	}
+	defer listener.Close()
+	log.Printf("[JREAP-TCP] Listening on %s", addr)
+
+	for {
+		conn, err := listener.AcceptWithTimeout(5 * time.Second)
+		if err != nil {
+			if err == jreap.ErrListenerClosed {
+				return
+			}
+			continue
+		}
+		go s.handleTCPConnection(conn)
+	}
+}
+
+func (s *Server) handleTCPConnection(conn *jreap.JREAPTCPConn) {
+	defer conn.Close()
+	log.Printf("[JREAP-TCP] Client connected from %s", conn.RemoteAddr())
+
+	for {
+		frame, err := conn.ReadFrameWithTimeout(30 * time.Second)
+		if err != nil {
+			log.Printf("[JREAP-TCP] Read error: %v", err)
+			return
+		}
+		if frame == nil {
+			continue
+		}
+
+		if err := s.jreapConsumer.ProcessMessage(frame); err != nil {
+			log.Printf("[JREAP-TCP] Process error: %v", err)
+		}
 	}
 }

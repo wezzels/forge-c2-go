@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -361,3 +362,49 @@ func (c *C2BMCInterface) JREAPOutputAll() (map[string][]byte, error) {
 
 	return results, nil
 }
+
+// InjectEngagement manually injects an external engagement order (from JREAP J4).
+func (c *C2BMCInterface) InjectEngagement(order *EngagementOrder) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.engagements[order.OrderID] = order
+	log.Printf("[C2BMC] Injected engagement: %s for track %s weapon=%s",
+		order.OrderID, order.TrackID, order.WeaponSystem)
+}
+
+// UpdateEngagementStatusByID updates engagement status by numeric engagement ID.
+// Used by JREAP consumer when J5 messages arrive with numeric engagement IDs.
+func (c *C2BMCInterface) UpdateEngagementStatusByID(engagementID uint32, status string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Search by engagement ID (first 32 bits of OrderID hash)
+	for id, eng := range c.engagements {
+		var idHash uint32
+		if n, _ := fmt.Sscanf(id, "ENG-%d", &idHash); n == 1 && idHash == engagementID {
+			eng.Status = status
+			eng.UpdatedAt = time.Now()
+			log.Printf("[C2BMC] Engagement %s (ID=%d): %s", id, engagementID, status)
+			return
+		}
+	}
+	log.Printf("[C2BMC] Engagement ID %d not found", engagementID)
+}
+
+// InjectAlert manually injects an alert (from JREAP J12).
+func (c *C2BMCInterface) InjectAlert(alert *BMDAlert) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.alerts[alert.AlertID] = alert
+	log.Printf("[C2BMC] Alert injected: %s type=%s severity=%d",
+		alert.AlertID, alert.AlertType, alert.Severity)
+}
+
+// --- EngagementOrder getters for jreap.EngagementOrderLike ---
+func (e *EngagementOrder) GetOrderID() string         { return e.OrderID }
+func (e *EngagementOrder) GetTrackID() string         { return e.TrackID }
+func (e *EngagementOrder) GetPriority() int           { return e.Priority }
+func (e *EngagementOrder) GetWeaponSystem() string     { return e.WeaponSystem }
+func (e *EngagementOrder) GetTimeOnTarget() time.Time { return e.TimeOnTarget }
+func (e *EngagementOrder) GetInterceptProb() float64   { return e.InterceptProb }
+func (e *EngagementOrder) GetStatus() string           { return e.Status }

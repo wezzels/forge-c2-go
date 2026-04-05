@@ -23,7 +23,7 @@ type J12Alert struct {
 }
 
 // J12PayloadSize is the packed byte size of a J12 Alert message.
-const J12PayloadSize = 39
+const J12PayloadSize = 45
 
 // PackJ12Alert packs a J12 Alert message into buf.
 func PackJ12Alert(a *J12Alert, buf []byte) {
@@ -44,8 +44,8 @@ func PackJ12Alert(a *J12Alert, buf []byte) {
 
 	latP := PackLatitude(a.Latitude)
 	lonP := PackLongitude(a.Longitude)
-	PackUint32(latP, buf, off); off += 3
-	PackUint32(lonP, buf, off); off += 3
+	PackUint32(latP, buf, off); off += 4
+	PackUint32(lonP, buf, off); off += 4
 
 	altP := uint32(a.Altitude)
 	PackUint24(altP, buf, off); off += 3
@@ -71,7 +71,7 @@ func PackJ12Alert(a *J12Alert, buf []byte) {
 	}
 
 	ms := PackMilliseconds(a.Timestamp)
-	PackUint32(ms, buf, off)
+	PackUint32(ms, buf, off); off += 4
 }
 
 // UnpackJ12Alert unpacks a J12 Alert message from buf.
@@ -94,8 +94,8 @@ func UnpackJ12Alert(buf []byte) *J12Alert {
 	a.AlertType = buf[off]; off++
 	a.Severity = buf[off]; off++
 
-	latP := UnpackUint24(buf, off); off += 3
-	lonP := UnpackUint24(buf, off); off += 3
+	latP := UnpackUint24(buf, off); off += 4
+	lonP := UnpackUint24(buf, off); off += 4
 	a.Latitude = UnpackLatitude(latP)
 	a.Longitude = UnpackLongitude(lonP)
 

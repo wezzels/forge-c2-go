@@ -51,12 +51,13 @@ func DefaultConfig() *Config {
 
 // Errors for transport layer.
 var (
-	ErrNotConnected    = errors.New("not connected")
-	ErrConnectionFailed = errors.New("connection failed")
+	ErrNotConnected     = errors.New("not connected")
+	ErrConnectionFailed  = errors.New("connection failed")
 	ErrWriteFailed      = errors.New("write failed")
 	ErrReadFailed       = errors.New("read failed")
 	ErrInvalidAddress   = errors.New("invalid address")
 	ErrListenerClosed   = errors.New("listener closed")
+	ErrTimeout          = errors.New("read timeout")
 )
 
 // JREAPUDPConn is a UDP connection for JREAP-C messages.
@@ -172,7 +173,7 @@ func (c *JREAPUDPConn) ReadFromWithTimeout(timeout time.Duration) ([]byte, *net.
 	n, addr, err := conn.ReadFromUDP(buf)
 	if err != nil {
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-			return nil, nil, nil // Timeout, not an error
+			return nil, nil, ErrTimeout
 		}
 		return nil, nil, fmt.Errorf("%w: %v", ErrReadFailed, err)
 	}

@@ -160,3 +160,25 @@ func (k *KafkaBroker) JREAPOutput(event *SensorEvent) ([]byte, error) {
 func (k *KafkaBroker) JREAPTrackOutput(track *Track) ([]byte, error) {
 	return k.jreapEncoder.EncodeTrack(track)
 }
+
+// --- SensorEvent getters for jreap.SensorEventLike ---
+func (e *SensorEvent) GetEventID() string    { return e.EventID }
+func (e *SensorEvent) GetTimestamp() time.Time { return e.Timestamp }
+func (e *SensorEvent) GetSensorID() string   { return e.SensorID }
+func (e *SensorEvent) GetLatitude() float64  { return e.Latitude }
+func (e *SensorEvent) GetLongitude() float64 { return e.Longitude }
+func (e *SensorEvent) GetAltitude() float64  { return e.Altitude }
+func (e *SensorEvent) GetIntensity() float64 { return e.Intensity }
+
+// --- Track getters for jreap.TrackLike ---
+func (t *Track) GetTrackID() string     { return t.TrackID }
+func (t *Track) GetTrackNumber() uint16 { return t.TrackNumber }
+func (t *Track) GetLatitude() float64   { return t.Latitude }
+func (t *Track) GetLongitude() float64  { return t.Longitude }
+func (t *Track) GetAltitude() float64   { return t.Altitude }
+func (t *Track) GetSpeed() float64      { return t.Speed }
+func (t *Track) GetHeading() float64    { return t.Heading }
+func (t *Track) GetThreatLevel() int    { return t.ThreatLevel }
+func (t *Track) GetStatus() string       { return t.Status }
+func (t *Track) GetLastUpdate() time.Time { return t.LastUpdate }
+func (t *Track) GetAssociations() []string { return t.Associations }

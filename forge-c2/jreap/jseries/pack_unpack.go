@@ -355,3 +355,19 @@ func HaversineDistanceMeters(lat1, lon1, lat2, lon2 float64) float64 {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 	return R * c
 }
+
+// PackUint40 packs a 40-bit unsigned integer into buf at byte offset bo (big-endian).
+// buf must have at least bo+5 bytes.
+func PackUint40(value uint64, buf []byte, bo int) {
+	buf[bo] = byte(value >> 32)
+	buf[bo+1] = byte(value >> 24)
+	buf[bo+2] = byte(value >> 16)
+	buf[bo+3] = byte(value >> 8)
+	buf[bo+4] = byte(value)
+}
+
+// UnpackUint40 unpacks a 40-bit unsigned integer from buf at byte offset bo (big-endian).
+func UnpackUint40(buf []byte, bo int) uint64 {
+	return uint64(buf[bo])<<32 | uint64(buf[bo+1])<<24 |
+		uint64(buf[bo+2])<<16 | uint64(buf[bo+3])<<8 | uint64(buf[bo+4])
+}
