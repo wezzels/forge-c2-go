@@ -84,3 +84,73 @@ func (h *coordinationHandler) HandleJ17(msg []byte) error {
 		j17.TransferID, subtype, j17.FileSize, j17.ParticipantSrc, j17.ParticipantDst, j17.Filename)
 	return nil
 }
+
+func (h *coordinationHandler) HandleJ18(msg []byte) error {
+	j18, err := h.decoder.DecodeJ18(msg)
+	if err != nil {
+		return err
+	}
+	log.Printf("[CoordHandler] J18: track=%d obj=%q pos=(%.4f,%.4f,%.0f) vel=(%.1f,%.1f,%.1f)",
+		j18.TrackNumber, j18.ObjectID, j18.Latitude, j18.Longitude, j18.Altitude,
+		j18.VelocityX, j18.VelocityY, j18.VelocityZ)
+	return nil
+}
+
+func (h *coordinationHandler) HandleJ26(msg []byte) error {
+	j26, err := h.decoder.DecodeJ26(msg)
+	if err != nil {
+		return err
+	}
+	log.Printf("[CoordHandler] J26: id=%d subtype=%d from=%d",
+		j26.TestID, j26.Subtype, j26.ParticipantNumber)
+	return nil
+}
+
+func (h *coordinationHandler) HandleJ27(msg []byte) error {
+	j27, err := h.decoder.DecodeJ27(msg)
+	if err != nil {
+		return err
+	}
+	log.Printf("[CoordHandler] J27: subtype=%d quality=%d offset=%.3fs",
+		j27.Subtype, j27.TimeQuality, j27.TimeOffset)
+	return nil
+}
+
+func (h *coordinationHandler) HandleJ29(msg []byte) error {
+	j29, err := h.decoder.DecodeJ29(msg)
+	if err != nil {
+		return err
+	}
+	log.Printf("[CoordHandler] J29: track=%d code=%d pattern=%d label=%q",
+		j29.TrackNumber, j29.SymbolCode, j29.PatternType, j29.Label)
+	return nil
+}
+
+func (h *coordinationHandler) HandleJ30(msg []byte) error {
+	j30, err := h.decoder.DecodeJ30(msg)
+	if err != nil {
+		return err
+	}
+	log.Printf("[CoordHandler] J30: track=%d subtype=%d iffcode=%d friendly=%d",
+		j30.TrackNumber, j30.Subtype, j30.IFFCode, j30.FriendlyCode)
+	return nil
+}
+
+func (h *coordinationHandler) HandleJ31(msg []byte) error {
+	j31, err := h.decoder.DecodeJ31(msg)
+	if err != nil {
+		return err
+	}
+	status := "DATA"
+	switch j31.Subtype {
+	case 1:
+		status = "HEADER"
+	case 2:
+		status = "COMPLETE"
+	case 3:
+		status = "CANCEL"
+	}
+	log.Printf("[CoordHandler] J31: id=%d type=%s chunk=%d/%d file=%q",
+		j31.TransferID, status, j31.ChunkIndex, j31.TotalChunks, j31.Filename)
+	return nil
+}

@@ -288,6 +288,78 @@ func (d *Decoder) DecodeJ17(msg []byte) (*jseries.J17InitiateTransfer, error) {
 	return jseries.UnpackJ17InitiateTransfer(payload), nil
 }
 
+// DecodeJ18 decodes a JREAP message as a J18 Space Track message.
+func (d *Decoder) DecodeJ18(msg []byte) (*jseries.J18SpaceTrack, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J18_SpaceTrack) {
+		return nil, fmt.Errorf("not a space track message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ18SpaceTrack(payload), nil
+}
+
+// DecodeJ26 decodes a JREAP message as a J26 Test message.
+func (d *Decoder) DecodeJ26(msg []byte) (*jseries.J26Test, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J26_Test) {
+		return nil, fmt.Errorf("not a test message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ26Test(payload), nil
+}
+
+// DecodeJ27 decodes a JREAP message as a J27 Time message.
+func (d *Decoder) DecodeJ27(msg []byte) (*jseries.J27Time, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J27_Time) {
+		return nil, fmt.Errorf("not a time message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ27Time(payload), nil
+}
+
+// DecodeJ29 decodes a JREAP message as a J29 Symbology message.
+func (d *Decoder) DecodeJ29(msg []byte) (*jseries.J29Symbology, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J29_Symbology) {
+		return nil, fmt.Errorf("not a symbology message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ29Symbology(payload), nil
+}
+
+// DecodeJ30 decodes a JREAP message as a J30 IFF message.
+func (d *Decoder) DecodeJ30(msg []byte) (*jseries.J30IFF, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J30_IFF) {
+		return nil, fmt.Errorf("not an IFF message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ30IFF(payload), nil
+}
+
+// DecodeJ31 decodes a JREAP message as a J31 File Transfer message.
+func (d *Decoder) DecodeJ31(msg []byte) (*jseries.J31FileTransfer, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J31_FileTransfer) {
+		return nil, fmt.Errorf("not a file transfer message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ31FileTransfer(payload), nil
+}
+
 // DecodeJ28 decodes a JREAP message as a J28 Space Track message.
 func (d *Decoder) DecodeJ28(msg []byte) (*jseries.J28SpaceTrack, error) {
 	hdr, payload, _, err := DecodeFull(msg)

@@ -209,6 +209,48 @@ func (e *Encoder) EncodeJ17(j17 *jseries.J17InitiateTransfer) ([]byte, error) {
 	return EncodeFull(buf, uint8(J17_InitiateTransfer), CRC16)
 }
 
+// EncodeJ18 encodes a J18 Space Track message.
+func (e *Encoder) EncodeJ18(j18 *jseries.J18SpaceTrack) ([]byte, error) {
+	buf := make([]byte, jseries.J18PayloadSize)
+	jseries.PackJ18SpaceTrack(j18, buf)
+	return EncodeFull(buf, uint8(J18_SpaceTrack), CRC16)
+}
+
+// EncodeJ26 encodes a J26 Test message.
+func (e *Encoder) EncodeJ26(j26 *jseries.J26Test) ([]byte, error) {
+	buf := make([]byte, jseries.J26PayloadSize)
+	jseries.PackJ26Test(j26, buf)
+	return EncodeFull(buf, uint8(J26_Test), CRC16)
+}
+
+// EncodeJ27 encodes a J27 Time message.
+func (e *Encoder) EncodeJ27(j27 *jseries.J27Time) ([]byte, error) {
+	buf := make([]byte, jseries.J27PayloadSize)
+	jseries.PackJ27Time(j27, buf)
+	return EncodeFull(buf, uint8(J27_Time), CRC16)
+}
+
+// EncodeJ29 encodes a J29 Symbology message.
+func (e *Encoder) EncodeJ29(j29 *jseries.J29Symbology) ([]byte, error) {
+	buf := make([]byte, jseries.J29PayloadSize)
+	jseries.PackJ29Symbology(j29, buf)
+	return EncodeFull(buf, uint8(J29_Symbology), CRC16)
+}
+
+// EncodeJ30 encodes a J30 IFF message.
+func (e *Encoder) EncodeJ30(j30 *jseries.J30IFF) ([]byte, error) {
+	buf := make([]byte, jseries.J30PayloadSize)
+	jseries.PackJ30IFF(j30, buf)
+	return EncodeFull(buf, uint8(J30_IFF), CRC16)
+}
+
+// EncodeJ31 encodes a J31 File Transfer message.
+func (e *Encoder) EncodeJ31(j31 *jseries.J31FileTransfer) ([]byte, error) {
+	buf := make([]byte, jseries.J31HeaderSize)
+	jseries.PackJ31FileTransfer(j31, buf)
+	return EncodeFull(buf, uint8(J31_FileTransfer), CRC16)
+}
+
 // EncodeJ28 encodes a J28 Space Track message.
 func (e *Encoder) EncodeJ28(j28 *jseries.J28SpaceTrack) ([]byte, error) {
 	buf := make([]byte, jseries.J28PayloadSize)

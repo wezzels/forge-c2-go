@@ -93,6 +93,18 @@ func (c *JREAPConsumer) ProcessMessage(msg []byte) error {
 		return c.coord.HandleJ17(msg)
 	case jreap.J12_Alert:
 		return c.alert.HandleJ12(msg)
+	case jreap.J18_SpaceTrack:
+		return c.coord.HandleJ18(msg)
+	case jreap.J26_Test:
+		return c.coord.HandleJ26(msg)
+	case jreap.J27_Time:
+		return c.coord.HandleJ27(msg)
+	case jreap.J29_Symbology:
+		return c.coord.HandleJ29(msg)
+	case jreap.J30_IFF:
+		return c.coord.HandleJ30(msg)
+	case jreap.J31_FileTransfer:
+		return c.coord.HandleJ31(msg)
 	case jreap.J28_SatelliteOPIR:
 		return c.opir.Handle(msg)
 	default:
