@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"forge-c2/jreap"
+	"forge-c2/mdpa"
 )
 
 // C2BMCInterface simulates the Command and Control, Battle Management, and Communications
@@ -338,14 +339,15 @@ func (c *C2BMCInterface) SimulateInterceptComplete(orderID string) {
 
 // JREAPOutput encodes an EngagementOrder as JREAP J4.0 and returns the bytes.
 // This is used for JREAP-C output to external C2 systems.
-func (c *C2BMCInterface) JREAPOutput(order *EngagementOrder) ([]byte, error) {
+// meta carries QualityFlags and CorrelationID through the JREAP pipeline.
+func (c *C2BMCInterface) JREAPOutput(order *EngagementOrder, meta *mdpa.MDPAMetadata) ([]byte, error) {
 	encoder := jreap.NewEncoder("FORGE-NODE-0001", "C2BMC-ENGAGE")
-	return encoder.EncodeEngagementOrder(order)
+	return encoder.EncodeEngagementOrder(order, meta)
 }
 
 // JREAPOutputAll encodes all current engagement orders as JREAP and returns them.
 // Returns a map of orderID -> JREAP bytes.
-func (c *C2BMCInterface) JREAPOutputAll() (map[string][]byte, error) {
+func (c *C2BMCInterface) JREAPOutputAll(meta *mdpa.MDPAMetadata) (map[string][]byte, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -353,7 +355,7 @@ func (c *C2BMCInterface) JREAPOutputAll() (map[string][]byte, error) {
 	results := make(map[string][]byte)
 
 	for id, order := range c.engagements {
-		msg, err := encoder.EncodeEngagementOrder(order)
+		msg, err := encoder.EncodeEngagementOrder(order, meta)
 		if err != nil {
 			return nil, err
 		}

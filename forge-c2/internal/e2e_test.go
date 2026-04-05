@@ -38,13 +38,13 @@ func TestJREAPE2E(t *testing.T) {
 		}
 
 		encoder := jreap.NewEncoder("FORGE-NODE-0001", "TEST")
-		msg, err := encoder.EncodeTrack(original)
+		msg, err := encoder.EncodeTrack(original, nil)
 		if err != nil {
 			t.Fatalf("EncodeTrack failed: %v", err)
 		}
 
 		decoder := jreap.NewDecoder("FORGE-NODE-0001", "TEST")
-		decoded, err := decoder.DecodeTrackUpdate(msg)
+		decoded, err := decoder.DecodeTrackUpdate(msg, nil)
 		if err != nil {
 			t.Fatalf("DecodeTrackUpdate failed: %v", err)
 		}
@@ -83,7 +83,7 @@ func TestJREAPE2E(t *testing.T) {
 			Heading:   90.0,
 			ThreatLevel: 3,
 		}
-		trackMsg, _ := encoder.EncodeTrack(track)
+		trackMsg, _ := encoder.EncodeTrack(track, nil)
 
 		err := consumer.ProcessMessage(trackMsg)
 		if err != nil {
@@ -339,7 +339,7 @@ func TestJREAPHeaderValidation(t *testing.T) {
 
 	msg, err := encoder.EncodeSensorEvent(&testSensorEvent{
 		id: "TEST-001", ts: time.Now(), lat: 34.0, lon: -118.0, alt: 10000, intensity: 80,
-	})
+	}, nil)
 	if err != nil {
 		t.Fatalf("Encode failed: %v", err)
 	}
@@ -393,7 +393,7 @@ func TestJREAPTransportUDPE2E(t *testing.T) {
 
 	encoder := jreap.NewEncoder("NODE-A", "TEST")
 	event := &testSensorEvent{id: "UDP-TEST", ts: time.Now(), lat: 40.0, lon: -74.0, alt: 20000, intensity: 90}
-	msg, _ := encoder.EncodeSensorEvent(event)
+	msg, _ := encoder.EncodeSensorEvent(event, nil)
 
 	err = sender.SendTo("127.0.0.1:"+fmt.Sprintf("%d", localAddr.Port), msg)
 	if err != nil {

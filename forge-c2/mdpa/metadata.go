@@ -69,8 +69,40 @@ func NewMDPAMetadata(nodeID, appID, correlationID, classification string) *MDPAM
 		QualityFlags:     QualityGood | QualityTimely, // Default to good
 		Classification:   classification,
 		ApplicationID:    appID,
-		CorrelationID:    correlationID,
+		CorrelationID:   correlationID,
 	}
+}
+
+// NewMDPAMetadataFromSensor creates metadata for a sensor event,
+// computing QualityFlags from sensor characteristics.
+func NewMDPAMetadataFromSensor(nodeID, appID, correlationID, classification string, snr, confidence float64, sensorType string) *MDPAMetadata {
+	m := NewMDPAMetadata(nodeID, appID, correlationID, classification)
+	// Set SNR flag
+	if snr >= 10 {
+		m.SetQualityFlag(QualitySNRAdequate)
+	}
+	// Confidence flag
+	if confidence >= 0.7 {
+		m.SetQualityFlag(QualityGood)
+	}
+	// Sensor-specific adjustments
+	if sensorType == "OPIR" {
+		m.SetQualityFlag(QualityGeomGood) // OPIR has good geometric quality from space
+	}
+	return m
+}
+
+// NewMDPAMetadataFromTrack creates metadata for a track update,
+// setting correlated/fused flags based on track state.
+func NewMDPAMetadataFromTrack(nodeID, appID, correlationID, classification string, isCorrelated, isFused bool) *MDPAMetadata {
+	m := NewMDPAMetadata(nodeID, appID, correlationID, classification)
+	if isCorrelated {
+		m.SetQualityFlag(QualityCorrelated)
+	}
+	if isFused {
+		m.SetQualityFlag(QualityFused)
+	}
+	return m
 }
 
 // IsQualityGood returns true if the quality flag indicates good data.

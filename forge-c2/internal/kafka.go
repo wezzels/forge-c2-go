@@ -3,12 +3,14 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 
 	"forge-c2/jreap"
+	"forge-c2/mdpa"
 )
 
 // KafkaBroker holds the connection to Kafka
@@ -61,6 +63,9 @@ type Track struct {
 	LastUpdate    time.Time  `json:"last_update"`
 	Associations  []string   `json:"associations"` // sensor IDs
 	Trajectory    []Position `json:"trajectory"`    // recent positions
+	// MDPAF fields
+	QualityFlags  uint8      `json:"quality_flags"` // MDPAMetadata quality bitfield
+	CorrelationID string     `json:"correlation_id"` // End-to-end tracking ID
 }
 
 // Position for trajectory history
@@ -150,15 +155,21 @@ func (k *KafkaBroker) ProduceTrack(ctx context.Context, topic string, track *Tra
 }
 
 // JREAPOutput encodes a SensorEvent as JREAP and returns the bytes.
-// This is used for JREAP-C output when Kafka is not available or as
-// a parallel output path for external JREAP consumers.
-func (k *KafkaBroker) JREAPOutput(event *SensorEvent) ([]byte, error) {
-	return k.jreapEncoder.EncodeSensorEvent(event)
+// metadata carries QualityFlags and CorrelationID through the JREAP pipeline.
+func (k *KafkaBroker) JREAPOutput(event *SensorEvent, meta *mdpa.MDPAMetadata) ([]byte, error) {
+	return k.jreapEncoder.EncodeSensorEvent(event, meta)
 }
 
 // JREAPTrackOutput encodes a Track as JREAP J3.0 and returns the bytes.
-func (k *KafkaBroker) JREAPTrackOutput(track *Track) ([]byte, error) {
-	return k.jreapEncoder.EncodeTrack(track)
+// metadata carries QualityFlags (from track.QualityFlags) and CorrelationID.
+func (k *KafkaBroker) JREAPTrackOutput(track *Track, meta *mdpa.MDPAMetadata) ([]byte, error) {
+	return k.jreapEncoder.EncodeTrack(track, meta)
+}
+
+// GenerateCorrelationID creates a CorrelationID for a track from satellite/sensor ID,
+// track number, and timestamp.
+func GenerateCorrelationID(satID string, trackNum uint16, t time.Time) string {
+	return fmt.Sprintf("%s-%04d-%d", satID, trackNum, t.UnixMilli())
 }
 
 // --- SensorEvent getters for jreap.SensorEventLike ---

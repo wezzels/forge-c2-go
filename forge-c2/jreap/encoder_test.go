@@ -81,7 +81,7 @@ func TestEncoder_EncodeSensorEvent(t *testing.T) {
 		intensity: 3000.0,
 	}
 
-	msg, err := encoder.EncodeSensorEvent(event)
+	msg, err := encoder.EncodeSensorEvent(event, nil)
 	if err != nil {
 		t.Fatalf("EncodeSensorEvent failed: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestEncoder_EncodeTrack(t *testing.T) {
 		associations: []string{"SBIRS-GEO-1"},
 	}
 
-	msg, err := encoder.EncodeTrack(track)
+	msg, err := encoder.EncodeTrack(track, nil)
 	if err != nil {
 		t.Fatalf("EncodeTrack failed: %v", err)
 	}
@@ -170,7 +170,7 @@ func TestEncoder_EncodeEngagementOrder(t *testing.T) {
 		status:       "PENDING",
 	}
 
-	msg, err := encoder.EncodeEngagementOrder(order)
+	msg, err := encoder.EncodeEngagementOrder(order, nil)
 	if err != nil {
 		t.Fatalf("EncodeEngagementOrder failed: %v", err)
 	}

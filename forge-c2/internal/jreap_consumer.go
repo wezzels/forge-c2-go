@@ -7,6 +7,7 @@ import (
 
 	"forge-c2/jreap"
 	"forge-c2/jreap/jseries"
+	"forge-c2/mdpa"
 )
 
 // JREAPConsumer processes incoming JREAP messages and feeds them into the system.
@@ -63,6 +64,7 @@ func (c *JREAPConsumer) ProcessMessage(msg []byte) error {
 
 // processJ2 feeds a J2 Surveillance message into the correlator as a new detection.
 func (c *JREAPConsumer) processJ2(msg []byte) error {
+	meta := mdpa.NewMDPAMetadata(c.decoder.NodeID(), "JREAP-CONSUMER", "", "UNCLASSIFIED")
 	j2, err := c.decoder.DecodeJ2(msg)
 	if err != nil {
 		return fmt.Errorf("DecodeJ2 failed: %w", err)
@@ -86,18 +88,23 @@ func (c *JREAPConsumer) processJ2(msg []byte) error {
 	}
 
 	track, isNew := c.correlator.ProcessEvent(event)
+	// Propagate CorrelationID back from track to metadata
+	meta.CorrelationID = track.CorrelationID
+	meta.QualityFlags = track.QualityFlags
+
 	c.trackStore.SetTrack(track.TrackID, track)
 	c.c2bmc.UpdateTrack(track)
 
-	log.Printf("[JREAPConsumer] J2 Surveillance: track=%s lat=%.4f lon=%.4f alt=%.0f new=%v",
-		track.TrackID, j2.Latitude, j2.Longitude, j2.Altitude, isNew)
+	log.Printf("[JREAPConsumer] J2 Surveillance: track=%s lat=%.4f lon=%.4f alt=%.0f new=%v corr=%s",
+		track.TrackID, j2.Latitude, j2.Longitude, j2.Altitude, isNew, meta.CorrelationID)
 	return nil
 }
 
 // processJ3 feeds a J3.0 Track Update directly into the track store (already correlated).
 // If the track exists, update it. If not, create a new track from J3 data.
 func (c *JREAPConsumer) processJ3(msg []byte) error {
-	j3, err := c.decoder.DecodeTrackUpdate(msg)
+	meta := mdpa.NewMDPAMetadata(c.decoder.NodeID(), "JREAP-CONSUMER", "", "UNCLASSIFIED")
+	j3, err := c.decoder.DecodeTrackUpdate(msg, meta)
 	if err != nil {
 		return fmt.Errorf("DecodeTrackUpdate failed: %w", err)
 	}
@@ -124,10 +131,17 @@ func (c *JREAPConsumer) processJ3(msg []byte) error {
 		if len(existing.Trajectory) > 20 {
 			existing.Trajectory = existing.Trajectory[len(existing.Trajectory)-20:]
 		}
+		// Propagate quality flags from J3
+		if j3.Metadata != nil {
+			existing.QualityFlags = j3.Metadata.QualityFlags
+			if j3.Metadata.CorrelationID != "" {
+				existing.CorrelationID = j3.Metadata.CorrelationID
+			}
+		}
 		c.trackStore.SetTrack(existing.TrackID, existing)
 		c.c2bmc.UpdateTrack(existing)
-		log.Printf("[JREAPConsumer] J3 Track Update: track=%s lat=%.4f lon=%.4f alt=%.0f spd=%.1f",
-			existing.TrackID, j3.Latitude, j3.Longitude, j3.Altitude, j3.Speed)
+		log.Printf("[JREAPConsumer] J3 Track Update: track=%s lat=%.4f lon=%.4f alt=%.0f spd=%.1f corr=%s",
+			existing.TrackID, j3.Latitude, j3.Longitude, j3.Altitude, j3.Speed, existing.CorrelationID)
 	} else {
 		// Create new track from J3
 		track := &Track{
@@ -148,6 +162,13 @@ func (c *JREAPConsumer) processJ3(msg []byte) error {
 				{Timestamp: j3.Timestamp, Lat: j3.Latitude, Lon: j3.Longitude, Alt: j3.Altitude},
 			},
 		}
+		// Apply quality from metadata
+		if j3.Metadata != nil {
+			track.QualityFlags = j3.Metadata.QualityFlags
+			track.CorrelationID = j3.Metadata.CorrelationID
+		} else {
+			track.CorrelationID = GenerateCorrelationID("FUSED", j3.TrackNumber, j3.Timestamp)
+		}
 		c.trackStore.SetTrack(track.TrackID, track)
 		c.correlator.ProcessEvent(&SensorEvent{
 			EventID:    fmt.Sprintf("J3-%d-%d", j3.TrackNumber, j3.Timestamp.UnixMilli()),
@@ -158,15 +179,16 @@ func (c *JREAPConsumer) processJ3(msg []byte) error {
 			Longitude: j3.Longitude,
 			Altitude:  j3.Altitude,
 		})
-		log.Printf("[JREAPConsumer] J3 Track New: track=%s lat=%.4f lon=%.4f alt=%.0f",
-			track.TrackID, j3.Latitude, j3.Longitude, j3.Altitude)
+		log.Printf("[JREAPConsumer] J3 Track New: track=%s lat=%.4f lon=%.4f alt=%.0f corr=%s",
+			track.TrackID, j3.Latitude, j3.Longitude, j3.Altitude, track.CorrelationID)
 	}
 	return nil
 }
 
 // processJ4 handles a J4 Engagement Order — feed to C2BMC.
 func (c *JREAPConsumer) processJ4(msg []byte) error {
-	j4, err := c.decoder.DecodeEngagementOrder(msg)
+	meta := mdpa.NewMDPAMetadata(c.decoder.NodeID(), "JREAP-CONSUMER", "", "UNCLASSIFIED")
+	j4, err := c.decoder.DecodeEngagementOrder(msg, meta)
 	if err != nil {
 		return fmt.Errorf("DecodeEngagementOrder failed: %w", err)
 	}
@@ -261,6 +283,7 @@ func (c *JREAPConsumer) processJ12(msg []byte) error {
 
 // processJ28 handles a J28 Space Track (OPIR satellite track) — feed to correlator.
 func (c *JREAPConsumer) processJ28(msg []byte) error {
+	meta := mdpa.NewMDPAMetadata(c.decoder.NodeID(), "JREAP-CONSUMER", "", "UNCLASSIFIED")
 	j28, err := c.decoder.DecodeJ28(msg)
 	if err != nil {
 		return fmt.Errorf("DecodeJ28 failed: %w", err)
@@ -284,11 +307,17 @@ func (c *JREAPConsumer) processJ28(msg []byte) error {
 	}
 
 	track, isNew := c.correlator.ProcessEvent(event)
+	// Propagate CorrelationID back from track
+	if track.CorrelationID != "" {
+		meta.CorrelationID = track.CorrelationID
+	}
+	meta.QualityFlags = track.QualityFlags
+
 	c.trackStore.SetTrack(track.TrackID, track)
 	c.c2bmc.UpdateTrack(track)
 
-	log.Printf("[JREAPConsumer] J28 Space Track: track=%s sat=%s lat=%.4f lon=%.4f alt=%.0f new=%v",
-		track.TrackID, j28.SatelliteID, j28.Latitude, j28.Longitude, j28.Altitude, isNew)
+	log.Printf("[JREAPConsumer] J28 Space Track: track=%s sat=%s lat=%.4f lon=%.4f alt=%.0f new=%v corr=%s",
+		track.TrackID, j28.SatelliteID, j28.Latitude, j28.Longitude, j28.Altitude, isNew, meta.CorrelationID)
 	return nil
 }
 

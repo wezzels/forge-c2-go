@@ -6,6 +6,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"forge-c2/mdpa"
 )
 
 // TrackCorrelator implements the VIMI track correlation algorithm
@@ -139,42 +141,13 @@ func (tc *TrackCorrelator) updateTrack(track *Track, event *SensorEvent) {
 	// Update threat level based on speed and altitude
 	track.ThreatLevel = tc.calculateThreatLevel(track)
 
+	// Update QualityFlags
+	hasMultipleSources := len(tc.associations[track.TrackID]) > 1
+	tc.updateTrackQualityFlagsUnsafe(track, event.SensorType, event.SNR, event.Confidence, hasMultipleSources)
+
 	// Mark old tracks as stale
 	_ = oldLat // suppress unused warning
 	_ = oldLon
-}
-
-// createTrack creates a new track from a sensor event
-func (tc *TrackCorrelator) createTrack(event *SensorEvent) *Track {
-	trackNum := tc.nextTrackNum
-	tc.nextTrackNum++
-
-	track := &Track{
-		TrackID:      fmt.Sprintf("TRK-%04d", trackNum),
-		TrackNumber:  trackNum,
-		Status:       "NEW",
-		Latitude:     event.Latitude,
-		Longitude:    event.Longitude,
-		Altitude:     event.Altitude,
-		Speed:        0,
-		Heading:      0,
-		ThreatLevel:  tc.calculateThreatLevelFromEvent(event),
-		TrackSource:  event.SensorType,
-		PlatformType: tc.inferPlatformType(event),
-		ForceType:    "UNKNOWN",
-		LastUpdate:   event.Timestamp,
-		Associations: []string{},
-		Trajectory: []Position{
-			{
-				Timestamp: event.Timestamp,
-				Lat:       event.Latitude,
-				Lon:       event.Longitude,
-				Alt:       event.Altitude,
-			},
-		},
-	}
-
-	return track
 }
 
 // calculateThreatLevel estimates threat level from track characteristics
@@ -221,6 +194,103 @@ func (tc *TrackCorrelator) calculateThreatLevelFromEvent(event *SensorEvent) int
 	}
 
 	return threat
+}
+
+// createTrack creates a new track from a sensor event
+func (tc *TrackCorrelator) createTrack(event *SensorEvent) *Track {
+	trackNum := tc.nextTrackNum
+	tc.nextTrackNum++
+
+	// Generate CorrelationID: satellite_id-track_num-timestamp
+	corrID := GenerateCorrelationID(event.SensorID, trackNum, event.Timestamp)
+
+	track := &Track{
+		TrackID:      fmt.Sprintf("TRK-%04d", trackNum),
+		TrackNumber:  trackNum,
+		Status:       "NEW",
+		Latitude:     event.Latitude,
+		Longitude:    event.Longitude,
+		Altitude:     event.Altitude,
+		Speed:        0,
+		Heading:      0,
+		ThreatLevel:  tc.calculateThreatLevelFromEvent(event),
+		TrackSource:  event.SensorType,
+		PlatformType: tc.inferPlatformType(event),
+		ForceType:    "UNKNOWN",
+		LastUpdate:   event.Timestamp,
+		Associations: []string{},
+		Trajectory: []Position{
+			{
+				Timestamp: event.Timestamp,
+				Lat:       event.Latitude,
+				Lon:       event.Longitude,
+				Alt:       event.Altitude,
+			},
+		},
+		// MDPAF fields
+		QualityFlags:  tc.computeQualityFlags(event, false, false),
+		CorrelationID: corrID,
+	}
+
+	return track
+}
+
+// updateTrackQualityFlags recomputes QualityFlags for a track based on
+// its current state and updates the track. Call after state changes.
+func (tc *TrackCorrelator) UpdateTrackQualityFlags(track *Track, sensorType string, snr, confidence float64) {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+
+	hasMultipleSources := len(track.Associations) > 1
+	tc.updateTrackQualityFlagsUnsafe(track, sensorType, snr, confidence, hasMultipleSources)
+}
+
+// updateTrackQualityFlagsUnsafe recomputes QualityFlags. Caller must hold lock.
+func (tc *TrackCorrelator) updateTrackQualityFlagsUnsafe(track *Track, sensorType string, snr, confidence float64, hasMultipleSources bool) {
+	isCorrelated := len(track.Associations) > 0
+	isFused := hasMultipleSources
+	track.QualityFlags = tc.computeQualityFlagsFromEvent(sensorType, snr, confidence, isCorrelated, isFused)
+}
+
+// computeQualityFlags computes the MDPAMetadata QualityFlags bitfield
+// from sensor characteristics and track state.
+func (tc *TrackCorrelator) computeQualityFlags(event *SensorEvent, isCorrelated, isFused bool) uint8 {
+	return tc.computeQualityFlagsFromEvent(event.SensorType, event.SNR, event.Confidence, isCorrelated, isFused)
+}
+
+// computeQualityFlagsFromEvent computes QualityFlags from sensor event data.
+func (tc *TrackCorrelator) computeQualityFlagsFromEvent(sensorType string, snr, confidence float64, isCorrelated, isFused bool) uint8 {
+	var flags uint8
+
+	// QualityGood: set if confidence >= 0.7
+	if confidence >= 0.7 {
+		flags |= mdpa.QualityGood
+	}
+
+	// SNR Adequate: set if SNR >= 10
+	if snr >= 10 {
+		flags |= mdpa.QualitySNRAdequate
+	}
+
+	// Geometric Quality: OPIR has good geometry from space-based vantage
+	if sensorType == "OPIR" {
+		flags |= mdpa.QualityGeomGood
+	}
+
+	// Timely: always set for new tracks (will be cleared if stale)
+	flags |= mdpa.QualityTimely
+
+	// Correlated: set if track has associated sensor events
+	if isCorrelated {
+		flags |= mdpa.QualityCorrelated
+	}
+
+	// Fused: set if multiple sensor sources
+	if isFused {
+		flags |= mdpa.QualityFused
+	}
+
+	return flags
 }
 
 // inferPlatformType guesses platform type from sensor data

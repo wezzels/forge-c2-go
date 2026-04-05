@@ -4,7 +4,15 @@ import (
 	"time"
 
 	"forge-c2/jreap/jseries"
+	"forge-c2/mdpa"
 )
+
+// EncodedMessage holds JREAP-encoded bytes plus associated metadata
+// that doesn't fit in the JREAP header (CorrelationID, Classification).
+type EncodedMessage struct {
+	Bytes   []byte
+	Metadata *mdpa.MDPAMetadata
+}
 
 // SensorEventLike is an interface for sensor events that can be JREAP-encoded.
 type SensorEventLike interface {
@@ -59,21 +67,41 @@ func NewEncoder(nodeID, appID string) *Encoder {
 
 // EncodeSensorEvent encodes a SensorEvent as a JREAP J-series message (J28).
 // Returns the full JREAP message bytes (header + payload + CRC).
-func (e *Encoder) EncodeSensorEvent(event SensorEventLike) ([]byte, error) {
-	payload := e.packOPIRMessage(event)
+func (e *Encoder) EncodeSensorEvent(event SensorEventLike, meta *mdpa.MDPAMetadata) ([]byte, error) {
+	payload := e.packOPIRMessage(event, meta)
 	return EncodeFull(payload, uint8(J28_SatelliteOPIR), CRC16)
 }
 
+// EncodeSensorEventWithMetadata encodes a SensorEvent as JREAP and returns
+// both the bytes and metadata (including CorrelationID).
+func (e *Encoder) EncodeSensorEventWithMetadata(event SensorEventLike, meta *mdpa.MDPAMetadata) (*EncodedMessage, error) {
+	buf, err := e.EncodeSensorEvent(event, meta)
+	return &EncodedMessage{Bytes: buf, Metadata: meta}, err
+}
+
 // EncodeTrack encodes a Track as a JREAP J3.0 Track Update message.
-func (e *Encoder) EncodeTrack(track TrackLike) ([]byte, error) {
-	payload := e.packTrackUpdate(track)
+// meta carries QualityFlags (wired into J3.Quality) and CorrelationID (returned).
+func (e *Encoder) EncodeTrack(track TrackLike, meta *mdpa.MDPAMetadata) ([]byte, error) {
+	payload := e.packTrackUpdate(track, meta)
 	return EncodeFull(payload, uint8(J3_TrackUpdate), CRC16)
 }
 
+// EncodeTrackWithMetadata encodes a Track as JREAP and returns both bytes and metadata.
+func (e *Encoder) EncodeTrackWithMetadata(track TrackLike, meta *mdpa.MDPAMetadata) (*EncodedMessage, error) {
+	buf, err := e.EncodeTrack(track, meta)
+	return &EncodedMessage{Bytes: buf, Metadata: meta}, err
+}
+
 // EncodeEngagementOrder encodes an EngagementOrder as a JREAP J4.0 Engagement Order message.
-func (e *Encoder) EncodeEngagementOrder(order EngagementOrderLike) ([]byte, error) {
+func (e *Encoder) EncodeEngagementOrder(order EngagementOrderLike, meta *mdpa.MDPAMetadata) ([]byte, error) {
 	payload := e.packEngagementOrder(order)
 	return EncodeFull(payload, uint8(J4_EngagementOrder), CRC16)
+}
+
+// EncodeEngagementOrderWithMetadata encodes an EngagementOrder as JREAP and returns both bytes and metadata.
+func (e *Encoder) EncodeEngagementOrderWithMetadata(order EngagementOrderLike, meta *mdpa.MDPAMetadata) (*EncodedMessage, error) {
+	buf, err := e.EncodeEngagementOrder(order, meta)
+	return &EncodedMessage{Bytes: buf, Metadata: meta}, err
 }
 
 // EncodeJ2 encodes a J2 Surveillance message (new track detection).
@@ -118,9 +146,9 @@ func (e *Encoder) EncodeJ28(j28 *jseries.J28SpaceTrack) ([]byte, error) {
 	return EncodeFull(buf, uint8(J28_SatelliteOPIR), CRC16)
 }
 
-// packOPIRMessage packs an OPIR/Sensor event into J28/Satellite format (17 bytes).
-func (e *Encoder) packOPIRMessage(event SensorEventLike) []byte {
-	buf := make([]byte, 17)
+// packOPIRMessage packs an OPIR/Sensor event into J28/Satellite format (67 bytes).
+func (e *Encoder) packOPIRMessage(event SensorEventLike, meta *mdpa.MDPAMetadata) []byte {
+	buf := make([]byte, jseries.J28PayloadSize)
 
 	trackNum := uint16(hashString(event.GetSensorID()) & 0xFFFE)
 	buf[0] = byte(trackNum >> 8)
@@ -157,15 +185,80 @@ func (e *Encoder) packOPIRMessage(event SensorEventLike) []byte {
 	buf[13] = byte(alt >> 8)
 	buf[14] = byte(alt)
 
-	ir := uint16(event.GetIntensity() * 10)
-	buf[15] = byte(ir >> 8)
-	buf[16] = byte(ir)
+	// Velocity (placeholder — set to 0 for raw sensor events)
+	for i := 15; i < 24; i++ {
+		buf[i] = 0
+	}
+
+	// Satellite ID (12 bytes, null-padded)
+	satID := event.GetSensorID()
+	for i := 0; i < 12; i++ {
+		if i < len(satID) {
+			buf[24+i] = satID[i]
+		} else {
+			buf[24+i] = 0
+		}
+	}
+
+	// Orbital elements (set to 0 for raw detection)
+	off := 36
+	for i := 0; i < 16; i++ {
+		buf[off+i] = 0
+	}
+	off += 16
+
+	// IR intensity (saturation at 655.35K to avoid overflow)
+	irVal := event.GetIntensity() * 100
+	if irVal > 65535 {
+		irVal = 65535
+	}
+	ir := uint16(irVal)
+	buf[off] = byte(ir >> 8)
+	buf[off+1] = byte(ir)
+	off += 2
+
+	// Background temp (0 for raw detection)
+	buf[off] = 0
+	buf[off+1] = 0
+	off += 2
+
+	// Detection confidence (from event intensity as proxy)
+	conf := uint8(event.GetIntensity() / 2.0 * 255)
+	if conf > 255 {
+		conf = 255
+	}
+	buf[off] = conf
+off++
+
+	// SNR (from event intensity as proxy)
+	snr := uint8(event.GetIntensity() / 5.0)
+	if snr > 255 {
+		snr = 255
+	}
+	buf[off] = snr
+off++
+
+	// Quality from metadata
+	quality := e.metadataToQuality(meta)
+	buf[off] = jseries.PackQuality(quality)
+	off++
+
+	// Threat level (from sensor type heuristic)
+	buf[off] = 0
+off++
+
+	// Status (NEW for raw detection)
+	buf[off] = 1
+off++
+
+	// Platform type (SATELLITE for OPIR)
+	buf[off] = 1
 
 	return buf
 }
 
 // packTrackUpdate packs a Track into J3.0 format (21 bytes).
-func (e *Encoder) packTrackUpdate(track TrackLike) []byte {
+func (e *Encoder) packTrackUpdate(track TrackLike, meta *mdpa.MDPAMetadata) []byte {
 	buf := make([]byte, 21)
 
 	tn := track.GetTrackNumber()
@@ -215,6 +308,32 @@ func (e *Encoder) packTrackUpdate(track TrackLike) []byte {
 	buf[20] = uint8(track.GetThreatLevel())
 
 	return buf
+}
+
+// metadataToQuality converts MDPAMetadata.QualityFlags to jseries.QualityIndicator.
+// MDPAMetadata bits: 0=Good, 1=SNR, 2=Geom, 3=Timely, 4=Correlated, 5=Fused
+// jseries QualityIndicator: 0-1=quality level, jamming, multipath, invalid, coasting, manual, derived
+func (e *Encoder) metadataToQuality(meta *mdpa.MDPAMetadata) jseries.QualityIndicator {
+	q := jseries.QualityIndicator{}
+	if meta == nil {
+		return q
+	}
+	flags := meta.QualityFlags
+	// Quality level: 0=poor, 1=normal, 2=good, 3=excellent
+	if flags&mdpa.QualityGood != 0 {
+		if flags&mdpa.QualitySNRAdequate != 0 {
+			q.Quality = 2 // good
+		} else {
+			q.Quality = 1 // normal
+		}
+	}
+	if flags&mdpa.QualityTimely == 0 {
+		q.Coasting = true // stale → coasting
+	}
+	if flags&mdpa.QualityCorrelated != 0 {
+		q.Derived = true // correlated → derived track
+	}
+	return q
 }
 
 // packEngagementOrder packs an EngagementOrder into J4.0 format (15 bytes).

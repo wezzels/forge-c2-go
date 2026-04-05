@@ -17,17 +17,17 @@ func TestDecoder_DecodeOPIR(t *testing.T) {
 		latitude:  35.5,
 		longitude: -115.5,
 		altitude:  150000,
-		intensity: 4500.0,
+		intensity: 450.0, // K — fits in J28 IR field (max 655.35K at 0.01K resolution)
 	}
 
 	// Encode
-	msg, err := encoder.EncodeSensorEvent(event)
+	msg, err := encoder.EncodeSensorEvent(event, nil)
 	if err != nil {
 		t.Fatalf("EncodeSensorEvent failed: %v", err)
 	}
 
 	// Decode
-	decoded, err := decoder.DecodeOPIR(msg)
+	decoded, err := decoder.DecodeOPIR(msg, nil)
 	if err != nil {
 		t.Fatalf("DecodeOPIR failed: %v", err)
 	}
@@ -41,9 +41,9 @@ func TestDecoder_DecodeOPIR(t *testing.T) {
 		t.Errorf("Altitude mismatch: got %.0f, want %.0f", decoded.Altitude, event.altitude)
 	}
 
-	// IR Intensity might not be exact due to scaling
+	// IR Intensity matches exactly at 0.01K resolution
 	irDiff := abs(decoded.IRIntensity - event.intensity)
-	if irDiff > 1 {
+	if irDiff > 0.1 {
 		t.Errorf("IRIntensity mismatch: got %.1f, want %.1f (diff=%.1f)", decoded.IRIntensity, event.intensity, irDiff)
 	}
 
@@ -68,13 +68,13 @@ func TestDecoder_DecodeTrackUpdate(t *testing.T) {
 	}
 
 	// Encode
-	msg, err := encoder.EncodeTrack(track)
+	msg, err := encoder.EncodeTrack(track, nil)
 	if err != nil {
 		t.Fatalf("EncodeTrack failed: %v", err)
 	}
 
 	// Decode
-	decoded, err := decoder.DecodeTrackUpdate(msg)
+	decoded, err := decoder.DecodeTrackUpdate(msg, nil)
 	if err != nil {
 		t.Fatalf("DecodeTrackUpdate failed: %v", err)
 	}
@@ -117,13 +117,13 @@ func TestDecoder_DecodeEngagementOrder(t *testing.T) {
 	}
 
 	// Encode
-	msg, err := encoder.EncodeEngagementOrder(order)
+	msg, err := encoder.EncodeEngagementOrder(order, nil)
 	if err != nil {
 		t.Fatalf("EncodeEngagementOrder failed: %v", err)
 	}
 
 	// Decode
-	decoded, err := decoder.DecodeEngagementOrder(msg)
+	decoded, err := decoder.DecodeEngagementOrder(msg, nil)
 	if err != nil {
 		t.Fatalf("DecodeEngagementOrder failed: %v", err)
 	}
@@ -169,19 +169,19 @@ func TestDecoder_DecodeWrongType(t *testing.T) {
 		lastUpdate: time.Now(),
 	}
 
-	msg, err := encoder.EncodeTrack(track)
+	msg, err := encoder.EncodeTrack(track, nil)
 	if err != nil {
 		t.Fatalf("EncodeTrack failed: %v", err)
 	}
 
 	// Try to decode as engagement order - should fail
-	_, err = decoder.DecodeEngagementOrder(msg)
+	_, err = decoder.DecodeEngagementOrder(msg, nil)
 	if err == nil {
 		t.Error("Expected error when decoding track as engagement order")
 	}
 
 	// Try to decode as OPIR - should fail
-	_, err = decoder.DecodeOPIR(msg)
+	_, err = decoder.DecodeOPIR(msg, nil)
 	if err == nil {
 		t.Error("Expected error when decoding track as OPIR")
 	}
