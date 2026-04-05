@@ -228,6 +228,66 @@ func (d *Decoder) DecodeJ11(msg []byte) (*jseries.J11DataTransfer, error) {
 	return jseries.UnpackJ11DataTransfer(payload), nil
 }
 
+// DecodeJ13 decodes a JREAP message as a J13 Precise Participant message.
+func (d *Decoder) DecodeJ13(msg []byte) (*jseries.J13PrecisionParticipant, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J13_PreciseParticipant) {
+		return nil, fmt.Errorf("not a precise participant message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ13PrecisionParticipant(payload), nil
+}
+
+// DecodeJ14 decodes a JREAP message as a J14 Process Specification message.
+func (d *Decoder) DecodeJ14(msg []byte) (*jseries.J14ProcessSpec, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J14_ProcessSpec) {
+		return nil, fmt.Errorf("not a process spec message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ14ProcessSpec(payload), nil
+}
+
+// DecodeJ15 decodes a JREAP message as a J15 Command message.
+func (d *Decoder) DecodeJ15(msg []byte) (*jseries.J15Command, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J15_Command) {
+		return nil, fmt.Errorf("not a command message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ15Command(payload), nil
+}
+
+// DecodeJ16 decodes a JREAP message as a J16 Acknowledge message.
+func (d *Decoder) DecodeJ16(msg []byte) (*jseries.J16Acknowledge, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J16_Acknowledge) {
+		return nil, fmt.Errorf("not an acknowledge message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ16Acknowledge(payload), nil
+}
+
+// DecodeJ17 decodes a JREAP message as a J17 Initiate Transfer message.
+func (d *Decoder) DecodeJ17(msg []byte) (*jseries.J17InitiateTransfer, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J17_InitiateTransfer) {
+		return nil, fmt.Errorf("not an initiate transfer message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ17InitiateTransfer(payload), nil
+}
+
 // DecodeJ28 decodes a JREAP message as a J28 Space Track message.
 func (d *Decoder) DecodeJ28(msg []byte) (*jseries.J28SpaceTrack, error) {
 	hdr, payload, _, err := DecodeFull(msg)

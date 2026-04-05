@@ -174,6 +174,41 @@ func (e *Encoder) EncodeJ11(j11 *jseries.J11DataTransfer) ([]byte, error) {
 	return EncodeFull(buf, uint8(J11_DataTransfer), CRC16)
 }
 
+// EncodeJ13 encodes a J13 Precise Participant message.
+func (e *Encoder) EncodeJ13(j13 *jseries.J13PrecisionParticipant) ([]byte, error) {
+	buf := make([]byte, jseries.J13PayloadSize)
+	jseries.PackJ13PrecisionParticipant(j13, buf)
+	return EncodeFull(buf, uint8(J13_PreciseParticipant), CRC16)
+}
+
+// EncodeJ14 encodes a J14 Process Specification message.
+func (e *Encoder) EncodeJ14(j14 *jseries.J14ProcessSpec) ([]byte, error) {
+	buf := make([]byte, jseries.J14PayloadSize)
+	jseries.PackJ14ProcessSpec(j14, buf)
+	return EncodeFull(buf, uint8(J14_ProcessSpec), CRC16)
+}
+
+// EncodeJ15 encodes a J15 Command message.
+func (e *Encoder) EncodeJ15(j15 *jseries.J15Command) ([]byte, error) {
+	buf := make([]byte, jseries.J15PayloadSize)
+	jseries.PackJ15Command(j15, buf)
+	return EncodeFull(buf, uint8(J15_Command), CRC16)
+}
+
+// EncodeJ16 encodes a J16 Acknowledge message.
+func (e *Encoder) EncodeJ16(j16 *jseries.J16Acknowledge) ([]byte, error) {
+	buf := make([]byte, jseries.J16PayloadSize)
+	jseries.PackJ16Acknowledge(j16, buf)
+	return EncodeFull(buf, uint8(J16_Acknowledge), CRC16)
+}
+
+// EncodeJ17 encodes a J17 Initiate Transfer message.
+func (e *Encoder) EncodeJ17(j17 *jseries.J17InitiateTransfer) ([]byte, error) {
+	buf := make([]byte, jseries.J17PayloadSize)
+	jseries.PackJ17InitiateTransfer(j17, buf)
+	return EncodeFull(buf, uint8(J17_InitiateTransfer), CRC16)
+}
+
 // EncodeJ28 encodes a J28 Space Track message.
 func (e *Encoder) EncodeJ28(j28 *jseries.J28SpaceTrack) ([]byte, error) {
 	buf := make([]byte, jseries.J28PayloadSize)

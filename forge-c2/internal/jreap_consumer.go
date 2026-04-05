@@ -18,6 +18,7 @@ import (
 //   - alertHandler:         J12 (alert/notification)
 //   - networkHandler:       J1 (net init), J6 (sensor reg), J7 (platform/sensor), J8 (radio)
 //                          J9 (EW), J10 (offset), J11 (data transfer)
+//   - coordinationHandler: J13 (precise participant), J14 (process spec), J15 (command), J16 (ack), J17 (initiate xfer)
 //
 // This separation means each message type can be processed, monitored, and
 // scaled independently — matching the NOS3 multi-app architecture.
@@ -28,6 +29,7 @@ type JREAPConsumer struct {
 	engagement        *engagementHandler
 	alert             *alertHandler
 	network           *networkHandler
+	coord             *coordinationHandler
 }
 
 // NewJREAPConsumer creates a new JREAP consumer with all typed handlers.
@@ -39,6 +41,7 @@ func NewJREAPConsumer(correlator *TrackCorrelator, c2bmc *C2BMCInterface, trackS
 		engagement: newEngagementHandler(c2bmc),
 		alert:      newAlertHandler(c2bmc),
 		network:    newNetworkHandler(),
+		coord:      newCoordinationHandler(),
 	}
 }
 
@@ -78,6 +81,16 @@ func (c *JREAPConsumer) ProcessMessage(msg []byte) error {
 		return c.network.HandleJ10(msg)
 	case jreap.J11_DataTransfer:
 		return c.network.HandleJ11(msg)
+	case jreap.J13_PreciseParticipant:
+		return c.coord.HandleJ13(msg)
+	case jreap.J14_ProcessSpec:
+		return c.coord.HandleJ14(msg)
+	case jreap.J15_Command:
+		return c.coord.HandleJ15(msg)
+	case jreap.J16_Acknowledge:
+		return c.coord.HandleJ16(msg)
+	case jreap.J17_InitiateTransfer:
+		return c.coord.HandleJ17(msg)
 	case jreap.J12_Alert:
 		return c.alert.HandleJ12(msg)
 	case jreap.J28_SatelliteOPIR:
