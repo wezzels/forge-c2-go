@@ -204,6 +204,30 @@ func (d *Decoder) DecodeJ28(msg []byte) (*jseries.J28SpaceTrack, error) {
 	return jseries.UnpackJ28SpaceTrack(payload), nil
 }
 
+// DecodeJ7 decodes a JREAP message as a J7 Platform/Sensor Data message.
+func (d *Decoder) DecodeJ7(msg []byte) (*jseries.J7PlatformData, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J7_Platform) {
+		return nil, fmt.Errorf("not a platform data message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ7PlatformData(payload), nil
+}
+
+// DecodeJ8 decodes a JREAP message as a J8 Radio message.
+func (d *Decoder) DecodeJ8(msg []byte) (*jseries.J8Radio, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J8_Radio) {
+		return nil, fmt.Errorf("not a radio message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ8Radio(payload), nil
+}
+
 // unpackOPIRMessage unpacks a J28 OPIR message payload (67 bytes).
 func (d *Decoder) unpackOPIRMessage(payload []byte, meta *mdpa.MDPAMetadata) (*DecodedOPIRMessage, error) {
 	if len(payload) < 17 {

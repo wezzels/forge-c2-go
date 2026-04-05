@@ -7,7 +7,8 @@ import (
 	"forge-c2/jreap/jseries"
 )
 
-// networkHandler processes J1 (Network Initialization) and J6 (Sensor Registration) messages.
+// networkHandler processes J1 (Network Initialization), J6 (Sensor Registration),
+// J7 (Platform/Sensor Data), and J8 (Radio) messages.
 type networkHandler struct {
 	decoder *jreap.Decoder
 }
@@ -48,5 +49,29 @@ func (h *networkHandler) HandleJ6(msg []byte) error {
 
 	log.Printf("[NetworkHandler] J6: sensor=%s type=%d status=%d pos=(%.4f,%.4f)",
 		j6.SensorID, j6.SensorType, j6.Status, j6.Latitude, j6.Longitude)
+	return nil
+}
+
+// HandleJ7 processes a J7 Platform/Sensor Data message.
+func (h *networkHandler) HandleJ7(msg []byte) error {
+	j7, err := h.decoder.DecodeJ7(msg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[NetworkHandler] J7: track=%d subtype=%d pos=(%.4f,%.4f,%.0f) signal=%d snr=%.1f",
+		j7.TrackNumber, j7.Subtype, j7.Latitude, j7.Longitude, j7.Altitude, j7.SignalType, j7.SNR)
+	return nil
+}
+
+// HandleJ8 processes a J8 Radio message.
+func (h *networkHandler) HandleJ8(msg []byte) error {
+	j8, err := h.decoder.DecodeJ8(msg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[NetworkHandler] J8: net=%d subtype=%d from=%d status=%s len=%d",
+		j8.NetworkID, j8.Subtype, j8.ParticipantNumber, j8.RadioStatus.String(), j8.MessageLength)
 	return nil
 }

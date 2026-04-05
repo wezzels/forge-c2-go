@@ -16,7 +16,7 @@ import (
 //   - opirHandler:          J28 (OPIR satellite tracks)
 //   - engagementHandler:    J4 (engagement order), J5 (engagement status)
 //   - alertHandler:         J12 (alert/notification)
-//   - networkHandler:       J1 (network init), J6 (sensor registration)
+//   - networkHandler:       J1 (network init), J6 (sensor reg), J7 (platform/sensor), J8 (radio)
 //
 // This separation means each message type can be processed, monitored, and
 // scaled independently — matching the NOS3 multi-app architecture.
@@ -67,6 +67,10 @@ func (c *JREAPConsumer) ProcessMessage(msg []byte) error {
 		return c.trackMgr.HandleJ0(msg)
 	case jreap.J1_NetworkInitialize:
 		return c.network.HandleJ1(msg)
+	case jreap.J7_Platform:
+		return c.network.HandleJ7(msg)
+	case jreap.J8_Radio:
+		return c.network.HandleJ8(msg)
 	case jreap.J12_Alert:
 		return c.alert.HandleJ12(msg)
 	case jreap.J28_SatelliteOPIR:

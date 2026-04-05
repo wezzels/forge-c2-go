@@ -160,6 +160,20 @@ func (e *Encoder) EncodeJ28(j28 *jseries.J28SpaceTrack) ([]byte, error) {
 	return EncodeFull(buf, uint8(J28_SatelliteOPIR), CRC16)
 }
 
+// EncodeJ7 encodes a J7 Platform/Sensor Data message.
+func (e *Encoder) EncodeJ7(j7 *jseries.J7PlatformData) ([]byte, error) {
+	buf := make([]byte, jseries.J7PayloadSize)
+	jseries.PackJ7PlatformData(j7, buf)
+	return EncodeFull(buf, uint8(J7_Platform), CRC16)
+}
+
+// EncodeJ8 encodes a J8 Radio message.
+func (e *Encoder) EncodeJ8(j8 *jseries.J8Radio) ([]byte, error) {
+	buf := make([]byte, jseries.J8PayloadSize(len(j8.MessageText)))
+	jseries.PackJ8Radio(j8, buf)
+	return EncodeFull(buf, uint8(J8_Radio), CRC16)
+}
+
 // packOPIRMessage packs an OPIR/Sensor event into J28/Satellite format (67 bytes).
 func (e *Encoder) packOPIRMessage(event SensorEventLike, meta *mdpa.MDPAMetadata) []byte {
 	buf := make([]byte, jseries.J28PayloadSize)
