@@ -233,27 +233,30 @@ func TestRoundTripUint32(t *testing.T) {
 
 // TestPackFloat24 tests packing a float64 into 24-bit scaled integer.
 func TestPackFloat24(t *testing.T) {
-	// Just verify PackFloat24 produces values in valid range and is deterministic
+	// New API: PackFloat24(value, range_, maxValue)
+	// range_ = full scale (e.g. 180 for lat, 360 for lon)
+	// maxValue = max 24-bit value (0xFFFFFF)
 	tests := []struct {
-		name   string
-		value  float64
-		scale  float64
-		offset float64
+		name     string
+		value    float64
+		range_   float64
+		maxValue float64
 	}{
-		{"zero", 0.0, 1e6, 0},
-		{"positive", 100.0, 1000.0, 0},
-		{"with offset", 45.0, 1.0, -90.0},
+		{"zero lat", 0.0, 180.0, float64(0xFFFFFF)},
+		{"positive lat", 45.0, 180.0, float64(0xFFFFFF)},
+		{"max lat", 90.0, 180.0, float64(0xFFFFFF)},
+		{"zero lon", 0.0, 360.0, float64(0xFFFFFF)},
+		{"positive lon", 90.0, 360.0, float64(0xFFFFFF)},
+		{"max lon", 180.0, 360.0, float64(0xFFFFFF)},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := PackFloat24(tt.value, tt.scale, tt.offset)
-			// Should be in valid 24-bit range
+			got := PackFloat24(tt.value, tt.range_, tt.maxValue)
 			if got > 0xFFFFFF {
 				t.Errorf("PackFloat24 result > 24-bit max: 0x%06X", got)
 			}
-			// Should be deterministic
-			if got != PackFloat24(tt.value, tt.scale, tt.offset) {
+			if got != PackFloat24(tt.value, tt.range_, tt.maxValue) {
 				t.Error("PackFloat24 not deterministic")
 			}
 		})
@@ -265,41 +268,36 @@ func TestUnpackFloat24(t *testing.T) {
 	tests := []struct {
 		name     string
 		data     uint32
-		scale    float64
-		offset   float64
+		range_   float64
+		maxValue float64
 		expected float64
-		approx   bool // approximate match
 	}{
-		{
-			name:     "zero",
-			data:     0,
-			scale:    1e6,
-			offset:   0,
-			expected: 0,
-		},
-		{
-			name:     "max latitude",
-			data:     0xFFFFFF,
-			scale:    180.0 / 16777215.0,
-			offset:   -90.0,
-			expected: 90.0,
-			approx:   true,
-		},
+		{"zero lat", 0, 180.0, float64(0xFFFFFF), -90.0},
+		{"mid lat", 0x800000, 180.0, float64(0xFFFFFF), 0.0},
+		{"max lat", 0xFFFFFF, 180.0, float64(0xFFFFFF), 90.0},
+		{"zero lon", 0, 360.0, float64(0xFFFFFF), -180.0},
+		{"mid lon", 0x800000, 360.0, float64(0xFFFFFF), 0.0},
+		{"max lon", 0xFFFFFF, 360.0, float64(0xFFFFFF), 180.0},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := UnpackFloat24(tt.data, tt.scale, tt.offset)
-			if tt.approx {
-				if abs(got-tt.expected) > 0.001 {
-					t.Errorf("UnpackFloat24(0x%06X, %f, %f) = %f, want ~%f", tt.data, tt.scale, tt.offset, got, tt.expected)
-				}
-			} else {
-				if got != tt.expected {
-					t.Errorf("UnpackFloat24(0x%06X, %f, %f) = %f, want %f", tt.data, tt.scale, tt.offset, got, tt.expected)
-				}
+			got := UnpackFloat24(tt.data, tt.range_, tt.maxValue)
+			if abs(got-tt.expected) > 0.01 {
+				t.Errorf("UnpackFloat24(0x%06X, %f, %f) = %f, want %f", tt.data, tt.range_, tt.maxValue, got, tt.expected)
 			}
 		})
+	}
+}
+
+// TestRoundTripFloat24 tests round-trip packing and unpacking.
+func TestRoundTripFloat24(t *testing.T) {
+	values := []float64{-90, -45, 0, 45, 90}
+	for _, v := range values {
+		got := UnpackFloat24(PackFloat24(v, 180.0, float64(0xFFFFFF)), 180.0, float64(0xFFFFFF))
+		if abs(got-v) > 0.01 {
+			t.Errorf("RoundTripFloat24(%f): got %f", v, got)
+		}
 	}
 }
 
