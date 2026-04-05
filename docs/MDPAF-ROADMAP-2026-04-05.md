@@ -10,8 +10,8 @@
 
 | Type | Name | Status | Notes |
 |------|------|--------|-------|
-| J0 | Track Management | ❌ Missing | Track initiation/drop |
-| J1 | Network Init | ❌ Missing | Network join/leave |
+| J0 | Track Management | ✅ Built | j0_track_mgmt.go (36 bytes) |
+| J1 | Network Init | ✅ Built | j1_network_init.go (40 bytes) |
 | J2 | Surveillance | ✅ Built | `j2_surveillance.go` |
 | J3 | Track Update | ✅ Built | `j3_track.go` |
 | J4 | Engagement Order | ✅ Built | `j4_engagement_order.go` |
@@ -52,37 +52,15 @@
 
 ---
 
-### P1 — J0 (Track Management) + J1 (Network Init)
+### P1 — J0 (Track Management) + J1 (Network Init) ✅ DONE (2026-04-05)
 
-**Use case:**
-- J0: Track initiation, track drop, track group management
-- J1: Network participation list, participant status
+**Commit:** `f36db631` (pushed)
 
-**J0 Track Management message (J0.0 — Track Data):**
-```
-Track Number (14 bits)
-Track Status (4 bits): INITIATING=0, CONFIRMED=1, UNCORRELATED=2, DROPPING=3
-...
-```
-
-**J1 Network Initialization (J1.0):**
-```
-Network Node ID (16 bits)
-Network Status (8 bits)
-Participant Count (8 bits)
-...
-```
-
-**Files to create:**
-- `jreap/jseries/j0_track_mgmt.go`
-- `jreap/jseries/j1_network_init.go`
-
-**Files to update:**
-- `jreap/message_types.go` — add J0_J1 types
-- `jreap/encoder.go` — wire J0, J1Encode
-- `jreap/decoder.go` — wire J0, J1Decode
-
-**Effort:** ~4 hours
+- `jreap/jseries/j0_track_mgmt.go`: J0TrackManagement (36 bytes), TrackManagementStatus/Type, Pack/Unpack
+- `jreap/jseries/j1_network_init.go`: J1NetworkInit (40 bytes), NetworkStatus, Pack/Unpack
+- `jreap/encoder.go`: EncodeJ0, EncodeJ1
+- `jreap/decoder.go`: DecodeJ0, DecodeJ1
+- `jreap_consumer.go`: processJ0 (track drop/init/update), processJ1 (network logging)
 
 ---
 
@@ -191,7 +169,7 @@ c2bmc.go: EngagementOrder
 
 **Estimated total:** 32 hours (~4-5 days at 8h/day)
 
-**Recommended order:** P1 → P5 → P2 → P3 → P4 → P6
+**Recommended order:** P5 → P2 → P3 → P4 → P6
 
 ---
 
@@ -203,4 +181,4 @@ c2bmc.go: EngagementOrder
 
 ---
 
-*Last updated: 2026-04-05 22:25 UTC*
+*Last updated: 2026-04-05 22:35 UTC*
