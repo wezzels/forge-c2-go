@@ -161,7 +161,7 @@ c2bmc.go: EngagementOrder
 |------|----------|--------|-------|
 | P0: QualityFlags + CorrelationID | ✅ Done | 4h | 4h |
 | P1: J0 + J1 | P1 | 4h | 8h |
-| P2: J7 + J8 | P2 | 4h | 12h |
+| P2: J7 + J8 | ✅ Done | 4h | 12h |
 | P3: J9 + J10 + J11 | P2 | 4h | 16h |
 | P4: J13-J17 | P3 | 6h | 22h |
 | P5: Multi-app consumer | P2 | 8h | 30h |
@@ -181,4 +181,4 @@ c2bmc.go: EngagementOrder
 
 ---
 
-*Last updated: 2026-04-05 22:55 UTC*
+*Last updated: 2026-04-05 23:35 UTC*
