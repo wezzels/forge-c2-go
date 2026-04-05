@@ -153,6 +153,27 @@ func (e *Encoder) EncodeJ1(j1 *jseries.J1NetworkInit) ([]byte, error) {
 	return EncodeFull(buf, uint8(J1_NetworkInitialize), CRC16)
 }
 
+// EncodeJ9 encodes a J9 Electronic Warfare message.
+func (e *Encoder) EncodeJ9(j9 *jseries.J9ElectronicAttack) ([]byte, error) {
+	buf := make([]byte, jseries.J9PayloadSize)
+	jseries.PackJ9ElectronicAttack(j9, buf)
+	return EncodeFull(buf, uint8(J9_ElectronicAttack), CRC16)
+}
+
+// EncodeJ10 encodes a J10 Offset message.
+func (e *Encoder) EncodeJ10(j10 *jseries.J10Offset) ([]byte, error) {
+	buf := make([]byte, jseries.J10PayloadSize)
+	jseries.PackJ10Offset(j10, buf)
+	return EncodeFull(buf, uint8(J10_Offset), CRC16)
+}
+
+// EncodeJ11 encodes a J11 Data Transfer message.
+func (e *Encoder) EncodeJ11(j11 *jseries.J11DataTransfer) ([]byte, error) {
+	buf := make([]byte, jseries.J11PayloadSize)
+	jseries.PackJ11DataTransfer(j11, buf)
+	return EncodeFull(buf, uint8(J11_DataTransfer), CRC16)
+}
+
 // EncodeJ28 encodes a J28 Space Track message.
 func (e *Encoder) EncodeJ28(j28 *jseries.J28SpaceTrack) ([]byte, error) {
 	buf := make([]byte, jseries.J28PayloadSize)

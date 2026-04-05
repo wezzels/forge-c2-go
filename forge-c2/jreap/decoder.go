@@ -192,6 +192,42 @@ func (d *Decoder) DecodeJ1(msg []byte) (*jseries.J1NetworkInit, error) {
 	return jseries.UnpackJ1NetworkInit(payload), nil
 }
 
+// DecodeJ9 decodes a JREAP message as a J9 Electronic Warfare message.
+func (d *Decoder) DecodeJ9(msg []byte) (*jseries.J9ElectronicAttack, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J9_ElectronicAttack) {
+		return nil, fmt.Errorf("not an EW message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ9ElectronicAttack(payload), nil
+}
+
+// DecodeJ10 decodes a JREAP message as a J10 Offset message.
+func (d *Decoder) DecodeJ10(msg []byte) (*jseries.J10Offset, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J10_Offset) {
+		return nil, fmt.Errorf("not an offset message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ10Offset(payload), nil
+}
+
+// DecodeJ11 decodes a JREAP message as a J11 Data Transfer message.
+func (d *Decoder) DecodeJ11(msg []byte) (*jseries.J11DataTransfer, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J11_DataTransfer) {
+		return nil, fmt.Errorf("not a data transfer message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ11DataTransfer(payload), nil
+}
+
 // DecodeJ28 decodes a JREAP message as a J28 Space Track message.
 func (d *Decoder) DecodeJ28(msg []byte) (*jseries.J28SpaceTrack, error) {
 	hdr, payload, _, err := DecodeFull(msg)

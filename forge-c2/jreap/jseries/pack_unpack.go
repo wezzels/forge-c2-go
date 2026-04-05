@@ -42,6 +42,25 @@ func UnpackUint24(buf []byte, bo int) uint32 {
 	return uint32(buf[bo])<<16 | uint32(buf[bo+1])<<8 | uint32(buf[bo+2])
 }
 
+// PackInt24 packs a signed 24-bit integer into buf at byte offset bo (big-endian, two's complement).
+func PackInt24(value int32, buf []byte, bo int) {
+	if value < 0 {
+		value += 0x1000000
+	}
+	buf[bo] = byte(value >> 16)
+	buf[bo+1] = byte(value >> 8)
+	buf[bo+2] = byte(value)
+}
+
+// UnpackInt24 unpacks a signed 24-bit integer from buf at byte offset bo.
+func UnpackInt24(buf []byte, bo int) int32 {
+	v := int32(uint32(buf[bo])<<16 | uint32(buf[bo+1])<<8 | uint32(buf[bo+2]))
+	if v&0x800000 != 0 {
+		v |= -1 << 24
+	}
+	return v
+}
+
 // PackFloat24 packs a float64 into 24 bits using range and maxValue.
 // The value is scaled such that (min,max) maps to (0,maxValue).
 // For lat: range=180 (covers -90 to 90), maxValue=0xFFFFFF

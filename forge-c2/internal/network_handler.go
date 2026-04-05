@@ -75,3 +75,39 @@ func (h *networkHandler) HandleJ8(msg []byte) error {
 		j8.NetworkID, j8.Subtype, j8.ParticipantNumber, j8.RadioStatus.String(), j8.MessageLength)
 	return nil
 }
+
+// HandleJ9 processes a J9 Electronic Warfare message.
+func (h *networkHandler) HandleJ9(msg []byte) error {
+	j9, err := h.decoder.DecodeJ9(msg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[NetworkHandler] J9: track=%d subtype=%d ea=%s freq=%.0f lat=%.4f lon=%.4f",
+		j9.TrackNumber, j9.Subtype, j9.EAStatus.String(), j9.Frequency, j9.Latitude, j9.Longitude)
+	return nil
+}
+
+// HandleJ10 processes a J10 Offset message.
+func (h *networkHandler) HandleJ10(msg []byte) error {
+	j10, err := h.decoder.DecodeJ10(msg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[NetworkHandler] J10: track=%d subtype=%d pos=(%.4f,%.4f,%.0f) off=(%.1f,%.1f,%.1f)",
+		j10.TrackNumber, j10.Subtype, j10.Latitude, j10.Longitude, j10.Altitude, j10.OffsetX, j10.OffsetY, j10.OffsetZ)
+	return nil
+}
+
+// HandleJ11 processes a J11 Data Transfer message.
+func (h *networkHandler) HandleJ11(msg []byte) error {
+	j11, err := h.decoder.DecodeJ11(msg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[NetworkHandler] J11: id=%d subtype=%d status=%s len=%d offset=%d",
+		j11.TransferID, j11.Subtype, j11.TransferStatus.String(), j11.DataLength, j11.Offset)
+	return nil
+}
