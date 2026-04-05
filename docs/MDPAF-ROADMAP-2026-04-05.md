@@ -36,49 +36,19 @@
 
 ## Priority Work Items
 
-### P0 — QualityFlags & CorrelationID Pipeline
+### P0 — QualityFlags & CorrelationID Pipeline ✅ DONE (2026-04-05)
 
-**Problem:** `MDPAMetadata` struct defines `QualityFlags` (bitfield) and `CorrelationID` but neither is wired through the encoder, decoder, or Kafka consumer.
+**Completed:** All `MDPAMetadata` fields now wired through the pipeline:
 
-**Files affected:**
-- `jreap/encoder.go` — Encode() doesn't accept MDPAMetadata
-- `jreap/decoder.go` — Decode() doesn't return MDPAMetadata
-- `mdpa/message_map.go` — FORGE → J-series mapping doesn't include metadata fields
-- `internal/kafka.go` — JREAPOutput() doesn't wire QualityFlags/CorrelationID
-- `internal/correlator.go` — tracks don't carry QualityFlags from source
-- `internal/jreap_consumer.go` — decoded metadata not propagated back
+- `metadata.go`: `NewMDPAMetadataFromSensor()`, `NewMDPAMetadataFromTrack()`
+- `encoder.go`: `EncodeSensorEvent/EncodeTrack/EncodeEngagementOrder` accept `*mdpa.MDPAMetadata`; `metadataToQuality()` wires flags to J-series
+- `decoder.go`: `DecodeOPIR/DecodeTrackUpdate/DecodeEngagementOrder(msg, meta)` extract QualityFlags; `extractMetadata()` builds metadata
+- `kafka.go`: `Track.QualityFlags` + `Track.CorrelationID` fields; `GenerateCorrelationID()` on track creation
+- `correlator.go`: `createTrack` generates CorrelationID and QualityFlags; `updateTrack` recomputes flags; `UpdateTrackQualityFlags()` exported
+- `c2bmc.go`: `JREAPOutput/JREAPOutputAll` accept metadata
+- `jreap_consumer.go`: all paths propagate CorrelationID
 
-**Changes needed:**
-
-```
-1. encoder.go
-   - EncodeSensorEvent(..., metadata MDPAMetadata) → JREAP bytes
-   - EncodeTrack(..., metadata MDPAMetadata) → JREAP bytes
-   - Wire QualityFlags into J-series PVD/MRV fields
-
-2. decoder.go
-   - Decode(..., metadata *MDPAMetadata) error
-   - Extract QualityFlags from J-series fields
-   - Populate CorrelationID from JREAP header or payload
-
-3. kafka.go — JREAPOutput()
-   - Accept MDPAMetadata parameter
-   - Pass to encoder.Encode()
-
-4. jreap_consumer.go
-   - Extract metadata from decoded JREAP
-   - Propagate CorrelationID to TrackStore updates
-
-5. correlator.go
-   - Set QualityFlags on outgoing tracks based on:
-     • Source sensor type (SBIRS HQ vs WFOV)
-     • Track age (staleness → clear QualityTimely)
-     • Correlation state (correlated → set QualityCorrelated)
-     • Fusion state (fused → set QualityFused)
-   - Generate CorrelationID on track creation: {satellite_id}-{track_number}-{timestamp}
-```
-
-**Effort:** ~3-4 hours
+**Commit:** `349d898c` (pushed)
 
 ---
 
@@ -211,7 +181,7 @@ c2bmc.go: EngagementOrder
 
 | Item | Priority | Effort | Total |
 |------|----------|--------|-------|
-| P0: QualityFlags + CorrelationID | P0 | 4h | 4h |
+| P0: QualityFlags + CorrelationID | ✅ Done | 4h | 4h |
 | P1: J0 + J1 | P1 | 4h | 8h |
 | P2: J7 + J8 | P2 | 4h | 12h |
 | P3: J9 + J10 + J11 | P2 | 4h | 16h |
@@ -221,16 +191,16 @@ c2bmc.go: EngagementOrder
 
 **Estimated total:** 32 hours (~4-5 days at 8h/day)
 
-**Recommended order:** P0 → P1 → P5 → P2 → P3 → P4 → P6
+**Recommended order:** P1 → P5 → P2 → P3 → P4 → P6
 
 ---
 
-## Top 3 Immediate Actions
+## Top 3 Immediate Actions (remaining)
 
-1. **Wire QualityFlags through encoder/decoder** — Add `metadata MDPAMetadata` param to Encode/Decode, extract flags from source sensor type and track state
-2. **Add CorrelationID propagation** — Generate on track creation, carry through Kafka → JREAP → decode, store on TrackStore
-3. **Implement J0 + J1** — J0 for track drop/init management, J1 for network participation status
+1. **Implement J0 + J1** — J0 for track drop/init management, J1 for network participation status
+2. **NOS3-style multi-app refactor** — split jreap_consumer.go into per-message-type handlers
+3. **J7 + J8** — Platform/sensor data and radio communications messages
 
 ---
 
-*Last updated: 2026-04-05 22:15 UTC*
+*Last updated: 2026-04-05 22:25 UTC*
