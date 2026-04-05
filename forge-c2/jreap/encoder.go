@@ -2,6 +2,8 @@ package jreap
 
 import (
 	"time"
+
+	"forge-c2/jreap/jseries"
 )
 
 // SensorEventLike is an interface for sensor events that can be JREAP-encoded.
@@ -55,80 +57,99 @@ func NewEncoder(nodeID, appID string) *Encoder {
 	}
 }
 
-// EncodeSensorEvent encodes a SensorEvent as a JREAP J-series message.
+// EncodeSensorEvent encodes a SensorEvent as a JREAP J-series message (J28).
 // Returns the full JREAP message bytes (header + payload + CRC).
 func (e *Encoder) EncodeSensorEvent(event SensorEventLike) ([]byte, error) {
-	// Build J-series payload for J28 (Satellite/OPIR)
 	payload := e.packOPIRMessage(event)
-
-	// Encode as JREAP
 	return EncodeFull(payload, uint8(J28_SatelliteOPIR), CRC16)
 }
 
-// EncodeTrack encodes a Track as a JREAP J-series message (J3.0).
+// EncodeTrack encodes a Track as a JREAP J3.0 Track Update message.
 func (e *Encoder) EncodeTrack(track TrackLike) ([]byte, error) {
-	// Pack as J3.0 Track Update
 	payload := e.packTrackUpdate(track)
-
 	return EncodeFull(payload, uint8(J3_TrackUpdate), CRC16)
 }
 
-// EncodeEngagementOrder encodes an EngagementOrder as JREAP J-series (J6.0).
+// EncodeEngagementOrder encodes an EngagementOrder as a JREAP J4.0 Engagement Order message.
 func (e *Encoder) EncodeEngagementOrder(order EngagementOrderLike) ([]byte, error) {
-	// Pack as J4.0 Engagement Order
 	payload := e.packEngagementOrder(order)
-
 	return EncodeFull(payload, uint8(J4_EngagementOrder), CRC16)
 }
 
-// packOPIRMessage packs an OPIR/Sensor event into a simplified J18.x format.
+// EncodeJ2 encodes a J2 Surveillance message (new track detection).
+func (e *Encoder) EncodeJ2(j2 *jseries.J2Surveillance) ([]byte, error) {
+	buf := make([]byte, jseries.J2PayloadSize)
+	jseries.PackJ2Surveillance(j2, buf)
+	return EncodeFull(buf, uint8(J2_Surveillance), CRC16)
+}
+
+// EncodeJ5 encodes a J5 Engagement Status message.
+func (e *Encoder) EncodeJ5(j5 *jseries.J5EngagementStatus) ([]byte, error) {
+	buf := make([]byte, jseries.J5PayloadSize)
+	jseries.PackJ5EngagementStatus(j5, buf)
+	return EncodeFull(buf, uint8(J5_EngagementStatus), CRC16)
+}
+
+// EncodeJ6 encodes a J6 Sensor Registration message.
+func (e *Encoder) EncodeJ6(j6 *jseries.J6SensorRegistration) ([]byte, error) {
+	buf := make([]byte, jseries.J6PayloadSize)
+	jseries.PackJ6SensorRegistration(j6, buf)
+	return EncodeFull(buf, uint8(J6_SensorRegistration), CRC16)
+}
+
+// EncodeJ12 encodes a J12 Alert message.
+func (e *Encoder) EncodeJ12(j12 *jseries.J12Alert) ([]byte, error) {
+	buf := make([]byte, jseries.J12PayloadSize)
+	jseries.PackJ12Alert(j12, buf)
+	return EncodeFull(buf, uint8(J12_Alert), CRC16)
+}
+
+// EncodeJ28 encodes a J28 Space Track message.
+func (e *Encoder) EncodeJ28(j28 *jseries.J28SpaceTrack) ([]byte, error) {
+	buf := make([]byte, jseries.J28PayloadSize)
+	jseries.PackJ28SpaceTrack(j28, buf)
+	return EncodeFull(buf, uint8(J28_SatelliteOPIR), CRC16)
+}
+
+// packOPIRMessage packs an OPIR/Sensor event into J28/Satellite format (17 bytes).
 func (e *Encoder) packOPIRMessage(event SensorEventLike) []byte {
-	// J18.x simplified format (FORGE simulation)
 	buf := make([]byte, 17)
 
-	// TrackNumber (16 bits) - use sensor ID hash
 	trackNum := uint16(hashString(event.GetSensorID()) & 0xFFFE)
 	buf[0] = byte(trackNum >> 8)
 	buf[1] = byte(trackNum)
 
-	// Time (32 bits) - milliseconds since epoch
 	ms := uint32(event.GetTimestamp().UnixMilli())
 	buf[2] = byte(ms >> 24)
 	buf[3] = byte(ms >> 16)
 	buf[4] = byte(ms >> 8)
 	buf[5] = byte(ms)
 
-	// Latitude (24 bits) - scale -90 to 90 into 0 to 0xFFFFFF
 	lat := int64((event.GetLatitude() + 90.0) / 180.0 * float64(0xFFFFFF))
 	if lat < 0 {
 		lat = 0
 	} else if lat > 0xFFFFFF {
 		lat = 0xFFFFFF
 	}
-	latVal := uint32(lat)
-	buf[6] = byte(latVal >> 16)
-	buf[7] = byte(latVal >> 8)
-	buf[8] = byte(latVal)
+	buf[6] = byte(lat >> 16)
+	buf[7] = byte(lat >> 8)
+	buf[8] = byte(lat)
 
-	// Longitude (24 bits) - scale -180 to 180 into 0 to 0xFFFFFF
 	lon := int64((event.GetLongitude() + 180.0) / 360.0 * float64(0xFFFFFF))
 	if lon < 0 {
 		lon = 0
 	} else if lon > 0xFFFFFF {
 		lon = 0xFFFFFF
 	}
-	lonVal := uint32(lon)
-	buf[9] = byte(lonVal >> 16)
-	buf[10] = byte(lonVal >> 8)
-	buf[11] = byte(lonVal)
+	buf[9] = byte(lon >> 16)
+	buf[10] = byte(lon >> 8)
+	buf[11] = byte(lon)
 
-	// Altitude (24 bits)
 	alt := uint32(event.GetAltitude()) & 0xFFFFFF
 	buf[12] = byte(alt >> 16)
 	buf[13] = byte(alt >> 8)
 	buf[14] = byte(alt)
 
-	// IR Intensity (16 bits)
 	ir := uint16(event.GetIntensity() * 10)
 	buf[15] = byte(ir >> 8)
 	buf[16] = byte(ir)
@@ -136,72 +157,60 @@ func (e *Encoder) packOPIRMessage(event SensorEventLike) []byte {
 	return buf
 }
 
-// packTrackUpdate packs a Track into J3.0 format.
+// packTrackUpdate packs a Track into J3.0 format (21 bytes).
 func (e *Encoder) packTrackUpdate(track TrackLike) []byte {
 	buf := make([]byte, 21)
 
-	// TrackNumber (16 bits)
 	tn := track.GetTrackNumber()
 	buf[0] = byte(tn >> 8)
 	buf[1] = byte(tn)
 
-	// Time (32 bits)
 	ms := uint32(track.GetLastUpdate().UnixMilli())
 	buf[2] = byte(ms >> 24)
 	buf[3] = byte(ms >> 16)
 	buf[4] = byte(ms >> 8)
 	buf[5] = byte(ms)
 
-	// Latitude (24 bits)
 	lat := int64((track.GetLatitude() + 90.0) / 180.0 * float64(0xFFFFFF))
 	if lat < 0 {
 		lat = 0
 	} else if lat > 0xFFFFFF {
 		lat = 0xFFFFFF
 	}
-	latVal := uint32(lat)
-	buf[6] = byte(latVal >> 16)
-	buf[7] = byte(latVal >> 8)
-	buf[8] = byte(latVal)
+	buf[6] = byte(lat >> 16)
+	buf[7] = byte(lat >> 8)
+	buf[8] = byte(lat)
 
-	// Longitude (24 bits)
 	lon := int64((track.GetLongitude() + 180.0) / 360.0 * float64(0xFFFFFF))
 	if lon < 0 {
 		lon = 0
 	} else if lon > 0xFFFFFF {
 		lon = 0xFFFFFF
 	}
-	lonVal := uint32(lon)
-	buf[9] = byte(lonVal >> 16)
-	buf[10] = byte(lonVal >> 8)
-	buf[11] = byte(lonVal)
+	buf[9] = byte(lon >> 16)
+	buf[10] = byte(lon >> 8)
+	buf[11] = byte(lon)
 
-	// Altitude (24 bits)
 	alt := uint32(track.GetAltitude()) & 0xFFFFFF
 	buf[12] = byte(alt >> 16)
 	buf[13] = byte(alt >> 8)
 	buf[14] = byte(alt)
 
-	// Speed (16 bits) - m/s, 0.1 m/s resolution
 	speed := uint16(track.GetSpeed() * 10)
 	buf[15] = byte(speed >> 8)
 	buf[16] = byte(speed)
 
-	// Heading (16 bits) - degrees, 0.01 degree resolution
 	heading := uint16(track.GetHeading() * 100)
 	buf[17] = byte(heading >> 8)
 	buf[18] = byte(heading)
 
-	// Status (8 bits)
 	buf[19] = trackStatusCode(track.GetStatus())
-
-	// Threat Level (8 bits)
 	buf[20] = uint8(track.GetThreatLevel())
 
 	return buf
 }
 
-// packEngagementOrder packs an EngagementOrder into J4.0 format.
+// packEngagementOrder packs an EngagementOrder into J4.0 format (15 bytes).
 func (e *Encoder) packEngagementOrder(order EngagementOrderLike) []byte {
 	buf := make([]byte, 15)
 
@@ -211,35 +220,28 @@ func (e *Encoder) packEngagementOrder(order EngagementOrderLike) []byte {
 	buf[2] = byte(orderHash >> 8)
 	buf[3] = byte(orderHash)
 
-	// Track Number placeholder (16 bits)
 	buf[4] = 0
 	buf[5] = 0
 
-	// Priority (8 bits)
 	buf[6] = uint8(order.GetPriority())
-
-	// Weapon System (8 bits)
 	buf[7] = weaponCode(order.GetWeaponSystem())
 
-	// Time on Target (32 bits)
 	tot := uint32(order.GetTimeOnTarget().UnixMilli())
 	buf[8] = byte(tot >> 24)
 	buf[9] = byte(tot >> 16)
 	buf[10] = byte(tot >> 8)
 	buf[11] = byte(tot)
 
-	// Intercept Probability (16 bits)
 	prob := uint16(order.GetInterceptProb() * 10000)
 	buf[12] = byte(prob >> 8)
 	buf[13] = byte(prob)
 
-	// Status (8 bits)
 	buf[14] = engagementStatusCode(order.GetStatus())
 
 	return buf
 }
 
-// hashString computes a simple hash for IDs.
+// hashString computes FNV-1a hash for IDs.
 func hashString(s string) uint32 {
 	h := uint32(2166136261)
 	for _, c := range s {
@@ -249,7 +251,7 @@ func hashString(s string) uint32 {
 	return h
 }
 
-// trackStatusCode encodes track status as a byte.
+// trackStatusCode encodes track status.
 func trackStatusCode(status string) uint8 {
 	switch status {
 	case "NEW":
@@ -265,7 +267,7 @@ func trackStatusCode(status string) uint8 {
 	}
 }
 
-// weaponCode encodes weapon system as a byte.
+// weaponCode encodes weapon system.
 func weaponCode(weapon string) uint8 {
 	switch weapon {
 	case "GBI":
@@ -281,7 +283,7 @@ func weaponCode(weapon string) uint8 {
 	}
 }
 
-// engagementStatusCode encodes engagement status as a byte.
+// engagementStatusCode encodes engagement status.
 func engagementStatusCode(status string) uint8 {
 	switch status {
 	case "PENDING":
