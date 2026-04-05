@@ -169,7 +169,7 @@ c2bmc.go: EngagementOrder
 
 **Estimated total:** 32 hours (~4-5 days at 8h/day)
 
-**Recommended order:** P5 → P2 → P3 → P4 → P6
+**Recommended order:** P2 → P3 → P4 → P6
 
 ---
 
@@ -181,4 +181,4 @@ c2bmc.go: EngagementOrder
 
 ---
 
-*Last updated: 2026-04-05 22:35 UTC*
+*Last updated: 2026-04-05 22:55 UTC*
