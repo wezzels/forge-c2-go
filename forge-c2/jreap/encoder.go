@@ -139,6 +139,20 @@ func (e *Encoder) EncodeJ12(j12 *jseries.J12Alert) ([]byte, error) {
 	return EncodeFull(buf, uint8(J12_Alert), CRC16)
 }
 
+// EncodeJ0 encodes a J0 Track Management message.
+func (e *Encoder) EncodeJ0(j0 *jseries.J0TrackManagement) ([]byte, error) {
+	buf := make([]byte, jseries.J0PayloadSize)
+	jseries.PackJ0TrackManagement(j0, buf)
+	return EncodeFull(buf, uint8(J0_TrackManagement), CRC16)
+}
+
+// EncodeJ1 encodes a J1 Network Initialization message.
+func (e *Encoder) EncodeJ1(j1 *jseries.J1NetworkInit) ([]byte, error) {
+	buf := make([]byte, jseries.J1PayloadSize)
+	jseries.PackJ1NetworkInit(j1, buf)
+	return EncodeFull(buf, uint8(J1_NetworkInitialize), CRC16)
+}
+
 // EncodeJ28 encodes a J28 Space Track message.
 func (e *Encoder) EncodeJ28(j28 *jseries.J28SpaceTrack) ([]byte, error) {
 	buf := make([]byte, jseries.J28PayloadSize)

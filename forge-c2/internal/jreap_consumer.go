@@ -52,6 +52,10 @@ func (c *JREAPConsumer) ProcessMessage(msg []byte) error {
 		return c.processJ5(msg)
 	case jreap.J6_SensorRegistration:
 		return c.processJ6(msg)
+	case jreap.J0_TrackManagement:
+		return c.processJ0(msg)
+	case jreap.J1_NetworkInitialize:
+		return c.processJ1(msg)
 	case jreap.J12_Alert:
 		return c.processJ12(msg)
 	case jreap.J28_SatelliteOPIR:
@@ -246,6 +250,96 @@ func (c *JREAPConsumer) processJ5(msg []byte) error {
 	return nil
 }
 
+// processJ0 handles a J0 Track Management message — manages track lifecycle.
+// Used for track initiation, confirmation, and drop notifications.
+func (c *JREAPConsumer) processJ0(msg []byte) error {
+	j0, err := c.decoder.DecodeJ0(msg)
+	if err != nil {
+		return fmt.Errorf("DecodeJ0 failed: %w", err)
+	}
+
+	log.Printf("[JREAPConsumer] J0 Track Management: track=%d status=%s type=%d lat=%.4f lon=%.4f alt=%.0f corr=%s",
+		j0.TrackNumber, j0.TrackStatus.String(), j0.MgtType,
+		j0.Latitude, j0.Longitude, j0.Altitude, j0.CorrelationID)
+
+	switch j0.MgtType {
+	case jseries.J0TrackDrop:
+		// Find and drop the track
+		if existing := c.findTrackByNumber(j0.TrackNumber); existing != nil {
+			existing.Status = "DROPPED"
+			existing.LastUpdate = j0.Time
+			c.trackStore.SetTrack(existing.TrackID, existing)
+			c.c2bmc.UpdateTrack(existing)
+			log.Printf("[JREAPConsumer] J0 Track Drop: track=%d (%s) dropped",
+				j0.TrackNumber, existing.TrackID)
+		}
+	case jseries.J0TrackInitiation:
+		// Create new track from J0 data
+		track := &Track{
+			TrackID:      fmt.Sprintf("TRK-%04d", j0.TrackNumber),
+			TrackNumber:  j0.TrackNumber,
+			Status:       j0.TrackStatus.String(),
+			Latitude:     j0.Latitude,
+			Longitude:    j0.Longitude,
+			Altitude:     j0.Altitude,
+			Speed:        j0.Speed,
+			Heading:      j0.Heading,
+			ThreatLevel: int(j0.Quality.Quality + 1), // quality 0-3 → threat 1-4
+			TrackSource:  j0.SensorID,
+			PlatformType: "BALLISTIC_MISSILE",
+			ForceType:   decodeForceType(j0.ForceType),
+			LastUpdate:   j0.Time,
+			Trajectory: []Position{
+				{Timestamp: j0.Time, Lat: j0.Latitude, Lon: j0.Longitude, Alt: j0.Altitude},
+			},
+			QualityFlags:  qualityToFlags(j0.Quality),
+			CorrelationID: j0.CorrelationID,
+		}
+		c.trackStore.SetTrack(track.TrackID, track)
+		c.c2bmc.UpdateTrack(track)
+		log.Printf("[JREAPConsumer] J0 Track Init: track=%d (%s) confirmed",
+			j0.TrackNumber, track.TrackID)
+	case jseries.J0TrackData, jseries.J0TrackGroup:
+		// Update existing track
+		if existing := c.findTrackByNumber(j0.TrackNumber); existing != nil {
+			existing.Latitude = j0.Latitude
+			existing.Longitude = j0.Longitude
+			existing.Altitude = j0.Altitude
+			existing.Speed = j0.Speed
+			existing.Heading = j0.Heading
+			existing.Status = j0.TrackStatus.String()
+			existing.LastUpdate = j0.Time
+			existing.QualityFlags = qualityToFlags(j0.Quality)
+			if j0.CorrelationID != "" {
+				existing.CorrelationID = j0.CorrelationID
+			}
+			c.trackStore.SetTrack(existing.TrackID, existing)
+			c.c2bmc.UpdateTrack(existing)
+		}
+	}
+	return nil
+}
+
+// processJ1 handles a J1 Network Initialization message — network join/leave/heartbeat.
+func (c *JREAPConsumer) processJ1(msg []byte) error {
+	j1, err := c.decoder.DecodeJ1(msg)
+	if err != nil {
+		return fmt.Errorf("DecodeJ1 failed: %w", err)
+	}
+
+	nodeStatus := "ACTIVE"
+	switch j1.NetworkStatus {
+	case jseries.NetworkStatusStandby:
+		nodeStatus = "STANDBY"
+	case jseries.NetworkStatusOffline:
+		nodeStatus = "OFFLINE"
+	}
+
+	log.Printf("[JREAPConsumer] J1 Network Init: net=%d msg_type=%d node=%d participants=%d status=%s lat=%.4f lon=%.4f",
+		j1.NetworkID, j1.MessageType, j1.NodeID, j1.ParticipantCount, nodeStatus, j1.Latitude, j1.Longitude)
+	return nil
+}
+
 // processJ6 handles a J6 Sensor Registration — log and optionally update sensor registry.
 func (c *JREAPConsumer) processJ6(msg []byte) error {
 	j6, err := c.decoder.DecodeJ6(msg)
@@ -346,4 +440,37 @@ func (c *JREAPConsumer) alertTypeString(t uint8) string {
 	default:
 		return "UNKNOWN"
 	}
+}
+
+// decodeForceType converts a J-series force type code to a string.
+func decodeForceType(code uint8) string {
+	switch code & 0x03 {
+	case 1:
+		return "FRIEND"
+	case 2:
+		return "HOSTILE"
+	case 3:
+		return "NEUTRAL"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// qualityToFlags converts a jseries.QualityIndicator to mdpa quality flags.
+func qualityToFlags(q jseries.QualityIndicator) uint8 {
+	var flags uint8
+	if q.Quality >= 1 {
+		flags |= mdpa.QualityGood
+	}
+	if q.Derived {
+		flags |= mdpa.QualityCorrelated
+	}
+	if q.Manual {
+		// Manual plots are generally good quality
+		flags |= mdpa.QualityGeomGood
+	}
+	if !q.Coasting {
+		flags |= mdpa.QualityTimely
+	}
+	return flags
 }

@@ -168,6 +168,30 @@ func (d *Decoder) DecodeJ12(msg []byte) (*jseries.J12Alert, error) {
 	return jseries.UnpackJ12Alert(payload), nil
 }
 
+// DecodeJ0 decodes a JREAP message as a J0 Track Management message.
+func (d *Decoder) DecodeJ0(msg []byte) (*jseries.J0TrackManagement, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J0_TrackManagement) {
+		return nil, fmt.Errorf("not a track management message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ0TrackManagement(payload), nil
+}
+
+// DecodeJ1 decodes a JREAP message as a J1 Network Initialization message.
+func (d *Decoder) DecodeJ1(msg []byte) (*jseries.J1NetworkInit, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+	if hdr.MessageType != uint8(J1_NetworkInitialize) {
+		return nil, fmt.Errorf("not a network init message: got J%d", hdr.MessageType)
+	}
+	return jseries.UnpackJ1NetworkInit(payload), nil
+}
+
 // DecodeJ28 decodes a JREAP message as a J28 Space Track message.
 func (d *Decoder) DecodeJ28(msg []byte) (*jseries.J28SpaceTrack, error) {
 	hdr, payload, _, err := DecodeFull(msg)
