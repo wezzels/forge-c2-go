@@ -92,21 +92,34 @@ CryptoLib + 41 COSMOS targets copied to `~/nos3/gsw/cosmos/COMPONENTS/`:
 **Note:** The NOS3 GSW build system expects COSMOS 4.5.0 (ballaerospace/cosmos:4.5.0).
 COSMOS 5 is running separately as a Docker Compose stack for the ground station UI.
 
-## Next Steps
-1. ✅ FSW build complete → test running `core-cpu1`
-2. ✅ GSW build artifacts ready (COSMOS 4.5.0 targets)
-3. Run `make launch` to connect simulators to COSMOS 5
-4. Test end-to-end: COSMOS cmd → cFS → simulators → COSMOS tlm
+## NOS Engine Server - BLOCKER
 
-**Launch command:**
+**The NOS engine server requires interactive stdin to stay alive.**
+It displays an interactive menu, and when stdin closes, the process exits.
+
+**Symptoms:**
+- Server starts fine and binds ports momentarily
+- When stdin closes (container exits), process dies
+- All attempts to daemonize fail: the server exits when it receives EOF
+
+**Root cause:** The `nos_engine_server_standalone` binary is designed for:
+1. Interactive terminal use (expect-like tooling)
+2. Running under supervision (tini/init systems)
+
+It's NOT designed to run as a standalone daemon.
+
+**Workaround:** Run the entire simulation stack inside Docker using `docker-compose`:
 ```bash
-cd ~/nos3 && make launch
+cd ~/nos3/10_42  # or wherever the docker-compose is
+docker-compose up
 ```
-This runs `nos3` launcher which starts:
-- 42 truth simulator (spacecraft dynamics)
-- Hardware simulators (generic_*, etc.)
-- cFS FSW (core-cpu1)
-- COSMOS 5 GSW bridge
+
+See: https://github.com/nasa-itc/NOS3/blob/master/README.md
+
+## Next Steps
+1. ⚠️ NOS engine server is blocking - needs docker-compose approach
+2. Try running 42 and simulators directly (without NOS engine)
+3. Or: Connect COSMOS 5 to cFS FSW via UDP directly
 
 ## Key Paths
 - Docker image: `ivvitc/nos3-64:20251107`
