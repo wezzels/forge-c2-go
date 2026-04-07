@@ -11,7 +11,8 @@ Ground station: COSMOS 5.0.5 running at http://localhost:2900
 | `make prep` | ✅ Done | `~/.nos3/42/` (spacecraft dynamics) |
 | `make build-sim` | ✅ Done | `~/nos3/sims/build/lib/*.so` |
 | `make build-fsw` | ✅ Done | `~/nos3/fsw/build/exe/cpu1/core-cpu1` |
-| `make build-gsw` | ⚠️ TODO | - |
+| `make build-gsw` | ✅ Done | `~/nos3/gsw/build/libcryptolib.so` + 41 GSW targets |
+| `make launch` | ⚠️ TODO | Requires 10Hz 42 sim connection |
 
 ## Critical Fixes Discovered
 
@@ -81,11 +82,31 @@ docker run --rm -u $(id -u):$(id -g) \
 ## Components Built (20 hardware simulators)
 generic_radio, generic_adcs, generic_eps, generic_css, generic_fss, generic_imu, generic_mag, generic_reaction_wheel, generic_star_tracker, generic_torquer, arducam, novatel_oem615, onair, sample, mgr, cryptolib, plus cFS core apps (es, evs, fs, sb, tbl, time, msg, sbr, resourceid, config)
 
+## GSW (Ground Software) Build
+
+CryptoLib + 41 COSMOS targets copied to `~/nos3/gsw/cosmos/COMPONENTS/`:
+- All hardware simulator targets (generic_radio, generic_adcs, generic_eps, etc.)
+- XTCE telemetry definitions
+- SIM_CMDBUS_BRIDGE
+
+**Note:** The NOS3 GSW build system expects COSMOS 4.5.0 (ballaerospace/cosmos:4.5.0).
+COSMOS 5 is running separately as a Docker Compose stack for the ground station UI.
+
 ## Next Steps
 1. ✅ FSW build complete → test running `core-cpu1`
-2. Run `make build-gsw` for COSMOS targets
-3. Connect NOS3 simulators to COSMOS 5
+2. ✅ GSW build artifacts ready (COSMOS 4.5.0 targets)
+3. Run `make launch` to connect simulators to COSMOS 5
 4. Test end-to-end: COSMOS cmd → cFS → simulators → COSMOS tlm
+
+**Launch command:**
+```bash
+cd ~/nos3 && make launch
+```
+This runs `nos3` launcher which starts:
+- 42 truth simulator (spacecraft dynamics)
+- Hardware simulators (generic_*, etc.)
+- cFS FSW (core-cpu1)
+- COSMOS 5 GSW bridge
 
 ## Key Paths
 - Docker image: `ivvitc/nos3-64:20251107`
