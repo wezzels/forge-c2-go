@@ -395,3 +395,131 @@ Max: 95%
 *Last Updated: 2026-03-27*
 *Version: 1.0*
 *51O8 Research Platform*
+---
+
+## Infrastructure & Communication
+
+### Server Overview
+
+| Server | IP | Purpose |
+|--------|-----|---------|
+| miner | 207.244.226.151 | Production web, Docker, Mail |
+| darth | 10.0.0.117 | Wazuh SIEM, Ollama, ComfyUI |
+| trooper1 | 10.0.0.99 | RTL-SDR, temperature monitoring |
+| RPI42 | 192.168.1.151 | OpenClaw agent (this machine) |
+| swordfish | 209.145.59.209 | Jump server (wezzel.com:23) |
+
+### SSH Access
+
+| Key | Location | Purpose |
+|-----|----------|---------|
+| id_ed25519 | ~/.ssh/id_ed25519 | miner, darth (primary) |
+| crackers | ~/.openclaw/workspace/crackers | swordfish jump server |
+
+```bash
+# Primary servers
+ssh -i ~/.ssh/id_ed25519 wez@10.0.0.117     # darth
+ssh -i ~/.ssh/id_ed25519 wez@207.244.226.151 # miner
+
+# Jump server
+ssh -i ~/.openclaw/workspace/crackers -p 23 wez@wezzel.com  # swordfish
+```
+
+---
+
+### Sending Email
+
+**Important:** Do NOT use Python's `smtplib` directly to connect to Gmail SMTP. It times out and fails.
+
+**Always use local Postfix** via the send_email helper script:
+
+```bash
+# Send email with attachment
+python3 /home/wez/scripts/send_email.py \
+  -t recipient@example.com \
+  -s "Subject here" \
+  -b "Body text here" \
+  -a /path/to/attachment.png
+
+# Send plain text email
+python3 /home/wez/scripts/send_email.py \
+  -t recipient@example.com \
+  -s "Subject here" \
+  -b "Body text here"
+```
+
+**Why local Postfix?**
+- Handles queuing and retries automatically
+- SPF authentication configured (stsgym.com SPF record includes miner IP)
+- Connection management handled by Postfix
+- Works reliably with Gmail SMTP relay
+
+**Sender addresses:**
+- Default: `wlrobbi@stsgym.com`
+- Custom: Use `-f sender@stsgym.com`
+
+**Mail logs:**
+```bash
+# Check if email was sent
+sudo tail -50 /var/log/mail.log | grep -E "status=sent|status=bounced"
+
+# Check mail queue
+sudo mailq
+```
+
+**Troubleshooting:**
+- If email not received, check spam folder
+- Verify SPF record includes `ip4:207.244.226.151`
+- Check mail logs on miner: `sudo tail -f /var/log/mail.log`
+
+---
+
+### ComfyUI (Image Generation)
+
+ComfyUI runs on darth (10.0.0.117:8188) for Stable Diffusion image generation.
+
+**Access:** http://10.0.0.117:8188
+
+**Requirements:**
+- RTX 5060 Ti (Blackwell) requires PyTorch nightly: `2.12.0.dev+cu128`
+- Standard CUDA builds don't support Blackwell architecture
+
+**Generating images via API:**
+```bash
+# Submit workflow
+curl -X POST http://10.0.0.117:8188/prompt \
+  -H "Content-Type: application/json" \
+  -d @workflow.json
+
+# Check output
+ls /home/wez/ComfyUI/output/
+```
+
+---
+
+### Ollama (LLM)
+
+Ollama runs on darth (10.0.0.117:11434) for local LLM inference.
+
+**Available models:**
+- llama3.1:8b - General purpose, fast
+- gemma3:12b - Multimodal
+- qwen3-coder:latest - Code generation
+
+```bash
+# List models
+ollama list
+
+# Run model
+ollama run llama3.1:8b
+
+# API call
+curl http://10.0.0.117:11434/api/generate \
+  -d '{"model": "llama3.1:8b", "prompt": "Hello"}'
+```
+
+---
+
+*Last Updated: 2026-04-07*
+*Version: 1.1*
+*51O8 Research Platform*
