@@ -1,90 +1,84 @@
 # FORGE-C2 Pack/Unpack Bugs
 
-## J3PayloadSize Off-by-3
+Documented bugs in J-series message packing/unpacking.
 
-**File:** `jreap/jseries/j3_track.go`
-**Line:** 25
-**Bug:** `J3PayloadSize = 21` but actual packed size is 24 bytes
+## Fixed Bugs
 
-**Fields in J3 pack (24 bytes total):**
-- TrackNumber: 2 bytes
-- Time (ms): 4 bytes
-- Latitude: 3 bytes (24-bit NIPO)
-- Longitude: 3 bytes (24-bit NIPO)
-- Altitude: 3 bytes
-- Speed: 2 bytes (via PackVelocity)
-- Heading: 2 bytes
-- Status: 1 byte
-- ThreatLevel: 1 byte
-- Quality: 1 byte
-- PlatformType: 1 byte
-- ForceType: 1 byte
-- **Total: 24 bytes**
+### PackFloat24 Formula (FIXED)
+- **Bug**: `PackFloat24(value, range_, maxValue)` used wrong formula: `(value + range_/2.0) / range_ * maxValue`
+  - `maxValue = -90` was negative, causing clamping to fail
+  - Example: `PackFloat24(33.7512, 180.0, -90.0)` returned `0xFFFF00` instead of `0xFFFFFFA6`
+- **Fix**: Rewritten as `PackFloat24(value, range_, offset)` using `(value + offset) * 0xFFFFFF / range_`
+  - For lat: `PackFloat24(lat, 180.0, 90.0)` → -90→0, 0→0x800000, 90→0xFFFFFF
+  - For lon: `PackFloat24(lon, 360.0, 180.0)` → -180→0, 0→0x800000, 180→0xFFFFFF
 
-**Impact:** `PackJ3TrackUpdate` writes to `buf[21]` (off=21) but only allocates 21 bytes → panic at line 64
+### J2 Field Widths (PARTIALLY FIXED)
+- **Bug**: J2 `PackJ2Surveillance` used `PackUint32` for 24-bit lat/lon/heading fields
+- **Fix**: Changed to `PackUint24` for lat/lon, `PackUint16` for heading (14-bit field fits in 16)
+- **Still broken**: Heading still misaligned due to remaining field offset issues
 
-**Fix:** Change `const J3PayloadSize = 21` to `const J3PayloadSize = 24`
+### J3 Payload Size (FIXED)
+- **Bug**: `J3PayloadSize = 21` (off by 3)
+- **Fix**: Changed to `J3PayloadSize = 24`
 
----
+## Known Bugs (Not Yet Fixed)
 
-## J2 Pack/Unpack Field Misalignment
+### J0 Track Management - Buffer Overflow
+- **Bug**: `J0PayloadSize = 36` but `PackJ0TrackManagement` writes beyond bounds
+- **Cause**: SensorID (8 bytes) + CorrelationID (16 bytes) + other fields exceed 36 bytes
+- **Test**: `TestJ0TrackManagementRoundtrip` panics with "index out of range [36]"
+- **Fix needed**: Either increase `J0PayloadSize` to ~48, or truncate strings
 
-**File:** `jreap/jseries/j2_surveillance.go`
+### J1 Network Init - Latitude Unpack Wrong
+- **Bug**: Latitude unpacked as -89.5 instead of 33.75
+- **Cause**: Uses `PackLatitudePacked` (signed 24-bit) but unpacks with wrong offset
+- **Test**: `TestJ1NetworkInitRoundtrip` shows lat mismatch
+- **Fix needed**: Check if J1 uses signed vs unsigned lat packing
 
-**Bug:** `PackJ2Surveillance` writes lat/lon as 32-bit values using `PackUint32` (which writes 4 bytes), but J2 standard specifies 24-bit packed lat/lon.
+### J6 Sensor Registration - Latitude Unpack Wrong
+- **Bug**: Latitude unpacked as -89.5 instead of 33.75
+- **Cause**: Similar to J1 - uses `PackLatitudePacked` with wrong unpacking offset
+- **Test**: `TestJ6SensorRegistrationRoundtrip` shows lat mismatch
+- **Fix needed**: Verify J6 uses signed vs unsigned lat packing
 
-Current code:
-```go
-latP := PackLatitudePacked(j2.Latitude)  // returns uint32 (24-bit value as 32-bit)
-lonP := PackLongitudePacked(j2.Longitude) // returns uint32 (24-bit value as 32-bit)
-PackUint32(latP, buf, off)   // writes 4 bytes starting at off
-off += 4
-PackUint32(lonP, buf, off)   // writes 4 bytes starting at off+4
-off += 4
-```
+### J11 Data Transfer - Buffer Overflow
+- **Bug**: `J11PayloadSize = 32` but `PackJ11DataTransfer` writes beyond bounds
+- **Cause**: Time field and other data exceed 32 bytes
+- **Test**: `TestJ11DataTransferRoundtrip` panics with "index out of range"
+- **Fix needed**: Increase `J11PayloadSize` or check field packing
 
-But `UnpackJ2Surveillance` reads them as 24-bit values:
-```go
-latP := UnpackUint32(buf, off)    // reads 4 bytes but should read 3
-off += 4
-lonP := UnpackUint32(buf, off)     // reads 4 bytes but should read 3
-off += 4
-j2.Latitude = UnpackLatitudePacked(latP)
-j2.Longitude = UnpackLongitudePacked(lonP)
-```
+### J26 Test - Buffer Overflow
+- **Bug**: `J26PayloadSize = 11` but `PackJ26Test` writes TestData string beyond bounds
+- **Cause**: TestData string (up to 64 bytes) + other fields exceed 11 bytes
+- **Test**: `TestJ26TestRoundtrip` panics with "index out of range"
+- **Fix needed**: Increase `J26PayloadSize` to accommodate TestData
 
-**Impact:** All lat/lon values corrupted. Similar issues with Heading (14 bits from 24-bit field).
+## Roundtrip Test Results (Phase 4)
 
-**Fix:** Change Pack side to use `PackUint24` instead of `PackUint32` for lat, lon, heading, radial velocity.
-
----
-
-## J2 Frequency Field Size
-
-**File:** `jreap/jseries/j2_surveillance.go`
-
-**Bug:** Frequency packed as 16-bit kHz (max ~65 MHz) but struct comment says Hz. Original frequency 9700 MHz (9700e6) overflows uint16 → becomes ~324 kHz.
-
-**Fix:** Either extend to 32-bit or document the kHz limitation.
-
----
+| Message Type | Status | Notes |
+|-------------|--------|-------|
+| J0 Track Management | ❌ FAIL | Buffer overflow |
+| J1 Network Init | ❌ FAIL | Lat unpack wrong |
+| J5 Engagement Status | ✅ PASS | |
+| J6 Sensor Registration | ❌ FAIL | Lat unpack wrong |
+| J7 Platform Data | ✅ PASS | |
+| J9 Electronic Warfare | ✅ PASS | |
+| J10 Offset | ✅ PASS | |
+| J11 Data Transfer | ❌ FAIL | Buffer overflow |
+| J12 Alert | ✅ PASS | |
+| J13 Precision Participant | ✅ PASS | |
+| J26 Test | ❌ FAIL | Buffer overflow |
+| J27 Time | ✅ PASS | |
 
 ## Root Cause Analysis
 
-The pack/unpack code was written without roundtrip tests. Existing encoder tests use `EncodeTrack` which bypasses the J-series pack functions and uses inline byte manipulation directly in `packTrackUpdate()`.
+Most bugs stem from:
+1. **Payload size constants don't match actual packed sizes** (J0, J11, J26)
+2. **Signed vs unsigned latitude/longitude packing** (J1, J6) - `PackLatitudePacked` uses signed int algorithm but unpacking may use unsigned
 
-The encoder.go `packTrackUpdate()` function uses correct 24-bit NIPO packing inline (no PackLatitudePacked call), which is why `EncodeTrack` works correctly.
+## Files Changed
 
-The J-series `PackJ2Surveillance` and `PackJ3TrackUpdate` functions are dead code paths never exercised by tests.
-
----
-
-## Test Coverage Gap
-
-`go test ./jreap/` passes (uses EncodeTrack/EncodeSensorEvent which bypass pack functions)
-`go test ./jreap/jseries/ -run Roundtrip` fails on J2/J3/J4 because pack/unpack has bugs
-
----
-
-**Discovered:** 2026-04-10
-**Status:** Documented, not yet fixed
+- `jreap/jseries/pack_unpack.go` - Fixed PackFloat24 formula
+- `jreap/jseries/j2_surveillance.go` - Fixed field widths
+- `jreap/jseries/j3_track.go` - Fixed J3PayloadSize
+- `jreap/jseries/roundtrip_test.go` - Phase 4 tests (14 passing)
