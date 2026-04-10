@@ -368,3 +368,55 @@ func TestJ27TimeRoundtrip(t *testing.T) {
 		t.Errorf("LeapSeconds: got %d, want %d", unpacked.LeapSeconds, orig.LeapSeconds)
 	}
 }
+
+// TestJ2SurveillanceRoundtrip tests J2 Surveillance pack/unpack.
+func TestJ2SurveillanceRoundtrip(t *testing.T) {
+	orig := &J2Surveillance{
+		TrackNumber:       12345,
+		ParticipantNumber: 6789,
+		TrackStatus:       1,
+		Latitude:          33.7512,
+		Longitude:         -117.8567,
+		Altitude:          10000,
+		Speed:             250.4,
+		Heading:           315.0,
+		CourseOverGround:  310.5,
+		RadialVelocity:    -150.0,
+		SignalIntensity:   -10.0,
+		Frequency:         3000000000,
+		SNR:              15.0,
+		Confidence:        0.85,
+		Timestamp:         time.Now(),
+		ForceType:         2,
+		PlatformType:      100,
+		SensorID:          "RADAR-01",
+	}
+	buf := make([]byte, J2PayloadSize)
+	PackJ2Surveillance(orig, buf)
+	unpacked := UnpackJ2Surveillance(buf)
+
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if unpacked.ParticipantNumber != orig.ParticipantNumber {
+		t.Errorf("ParticipantNumber: got %d, want %d", unpacked.ParticipantNumber, orig.ParticipantNumber)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J2 Latitude: PASS (%.6f ~= %.6f)", unpacked.Latitude, orig.Latitude)
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+	if floatApproxEq(unpacked.Longitude, orig.Longitude, 0.01) {
+		t.Logf("J2 Longitude: PASS (%.6f ~= %.6f)", unpacked.Longitude, orig.Longitude)
+	} else {
+		t.Errorf("Longitude: got %f, want %f", unpacked.Longitude, orig.Longitude)
+	}
+	if floatApproxEq(unpacked.Speed, orig.Speed, 0.1) {
+		t.Logf("J2 Speed: PASS")
+	} else {
+		t.Errorf("Speed: got %f, want %f", unpacked.Speed, orig.Speed)
+	}
+	if unpacked.SensorID != orig.SensorID {
+		t.Errorf("SensorID: got %s, want %s", unpacked.SensorID, orig.SensorID)
+	}
+}

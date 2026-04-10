@@ -305,8 +305,8 @@ func TestEncodeUsing_J2(t *testing.T) {
 	if len(buf) == 0 {
 		t.Error("EncodeUsing returned empty buffer")
 	}
-	// Should have header (8) + J2 payload (40) + crc (2) = 50 bytes
-	if len(buf) != 50 {
+	// Should have header (8) + J2 payload (44) + crc (2) = 54 bytes
+	if len(buf) != 54 {
 		t.Errorf("Expected 50 bytes, got %d", len(buf))
 	}
 }
