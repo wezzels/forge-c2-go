@@ -84,3 +84,36 @@ Documented bugs in J-series message packing/unpacking and their fixes.
 cd ~/forge-c2-go-src
 go test ./jreap/... -v
 ```
+
+---
+
+## Phase 3 Integration (2026-04-10)
+
+### What Was Already Done (Previously)
+Phase 3.1-3.5 was already substantially complete:
+
+**3.1 Registry (✅ Complete)**
+- 24 J-series types (J0-J31) registered in both encoder and decoder
+- ok-check pattern used for type assertions
+- Error returns properly handled
+
+**3.2 QualityFlags Pipeline (✅ Complete)**
+- `QualityFlags` type defined in `mdpa/metadata.go` (uint8 bitfield)
+- `metadataToQuality()` in `encoder.go` converts MDPAMetadata→jseries.QualityIndicator
+- Quality bits mapped: Good→Quality, Timely→Coasting, Correlated→Derived
+
+**3.3 CorrelationID (✅ Complete)**
+- `CorrelationID` field in `MDPAMetadata` struct
+- Propagated through encoder via `EncodedMessage` struct
+
+**3.5 Roundtrip Tests (✅ Complete 2026-04-10)**
+- 25 roundtrip tests now passing (J0, J1, J2, J3, J4, J5, J6, J7, J8, J9, J10, J11, J12, J13, J14, J15, J16, J17, J18, J26, J27, J28, J29, J30, J31)
+
+### What Remains (Deferred)
+Tasks 3.6.x require internal handler files that don't exist in the current repo structure:
+- `track_mgr_handler.go`
+- `jreap_consumer.go`
+- `alert_handler.go`
+- `engagement_handler.go`
+
+These will be implemented when the internal handler architecture is defined.
