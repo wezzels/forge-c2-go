@@ -49,9 +49,9 @@ func PackJ28SpaceTrack(t *J28SpaceTrack, buf []byte) {
 
 	latP := PackLatitude(t.Latitude)
 	lonP := PackLongitude(t.Longitude)
-	PackUint32(latP, buf, off)
+	PackUint24(latP, buf, off)
 	off += 3
-	PackUint32(lonP, buf, off)
+	PackUint24(lonP, buf, off)
 	off += 3
 
 	altP := uint32(t.Altitude)

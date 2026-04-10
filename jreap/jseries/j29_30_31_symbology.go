@@ -278,7 +278,7 @@ type J31FileTransfer struct {
 }
 
 // J31HeaderSize is the fixed header size of a J31 message.
-const J31HeaderSize = 15
+const J31HeaderSize = 45
 
 // PackJ31FileTransfer packs a J31 message header into buf.
 // Data must be appended separately.

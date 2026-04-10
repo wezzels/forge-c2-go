@@ -307,7 +307,7 @@ type J17InitiateTransfer struct {
 }
 
 // J17PayloadSize is the packed byte size of a J17 Initiate Transfer message.
-const J17PayloadSize = 23
+const J17PayloadSize = 48
 
 // PackJ17InitiateTransfer packs a J17 message into buf.
 func PackJ17InitiateTransfer(j17 *J17InitiateTransfer, buf []byte) {

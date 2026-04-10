@@ -530,3 +530,287 @@ func TestJ8RadioRoundtrip(t *testing.T) {
 	}
 	t.Logf("J8 Radio: PASS (0, 10 byte variants)")
 }
+
+// TestJ14ProcessSpecRoundtrip tests J14 Process Specification pack/unpack.
+func TestJ14ProcessSpecRoundtrip(t *testing.T) {
+	orig := &J14ProcessSpec{
+		TrackNumber:       1234,
+		Subtype:          1,
+		ProcessMode:       1, // AUTO
+		QualityMin:        50,
+		UpdateRate:        2.5,
+		CorrelationWindow: 5.0,
+		FilterGain:        0.75,
+		MaxAge:            30.0,
+		Latitude:          33.7512,
+		Longitude:        -117.8567,
+		Time:             time.Now(),
+	}
+	buf := make([]byte, J14PayloadSize)
+	PackJ14ProcessSpec(orig, buf)
+	unpacked := UnpackJ14ProcessSpec(buf)
+
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J14 Latitude: PASS")
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
+
+// TestJ15CommandRoundtrip tests J15 Command pack/unpack.
+func TestJ15CommandRoundtrip(t *testing.T) {
+	orig := &J15Command{
+		CommandID:   1234,
+		Subtype:     1,
+		CommandCode: 5,
+		TargetID:    6789,
+		Priority:    2, // ROUTINE
+		Latitude:    33.7512,
+		Longitude:  -117.8567,
+		Altitude:   5000,
+		Time:       time.Now(),
+	}
+	buf := make([]byte, J15PayloadSize)
+	PackJ15Command(orig, buf)
+	unpacked := UnpackJ15Command(buf)
+
+	if unpacked.CommandID != orig.CommandID {
+		t.Errorf("CommandID: got %d, want %d", unpacked.CommandID, orig.CommandID)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J15 Latitude: PASS")
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
+
+// TestJ16AcknowledgeRoundtrip tests J16 Acknowledge pack/unpack.
+func TestJ16AcknowledgeRoundtrip(t *testing.T) {
+	orig := &J16Acknowledge{
+		AckID:             1234,
+		Subtype:          1,
+		AckStatus:        1, // ACK
+		OriginalID:       6789,
+		ParticipantNumber: 111,
+		ReasonCode:       0,
+		Time:             time.Now(),
+	}
+	buf := make([]byte, J16PayloadSize)
+	PackJ16Acknowledge(orig, buf)
+	unpacked := UnpackJ16Acknowledge(buf)
+
+	if unpacked.AckID != orig.AckID {
+		t.Errorf("AckID: got %d, want %d", unpacked.AckID, orig.AckID)
+	}
+	if unpacked.ParticipantNumber != orig.ParticipantNumber {
+		t.Errorf("ParticipantNumber: got %d, want %d", unpacked.ParticipantNumber, orig.ParticipantNumber)
+	}
+}
+
+// TestJ17InitiateTransferRoundtrip tests J17 Initiate Transfer pack/unpack.
+func TestJ17InitiateTransferRoundtrip(t *testing.T) {
+	orig := &J17InitiateTransfer{
+		TransferID:     1234,
+		Subtype:        1,
+		FileType:       2,
+		FileSize:       1024000,
+		Checksum:       0xDEADBEEF,
+		ParticipantSrc: 111,
+		ParticipantDst: 222,
+		Filename:       "data.bin",
+		Time:           time.Now(),
+	}
+	buf := make([]byte, J17PayloadSize)
+	PackJ17InitiateTransfer(orig, buf)
+	unpacked := UnpackJ17InitiateTransfer(buf)
+
+	if unpacked.TransferID != orig.TransferID {
+		t.Errorf("TransferID: got %d, want %d", unpacked.TransferID, orig.TransferID)
+	}
+	if unpacked.FileSize != orig.FileSize {
+		t.Errorf("FileSize: got %d, want %d", unpacked.FileSize, orig.FileSize)
+	}
+	if unpacked.Filename != orig.Filename {
+		t.Errorf("Filename: got %s, want %s", unpacked.Filename, orig.Filename)
+	}
+}
+
+// TestJ18SpaceTrackRoundtrip tests J18 Space Track pack/unpack.
+func TestJ18SpaceTrackRoundtrip(t *testing.T) {
+	orig := &J18SpaceTrack{
+		TrackNumber:      1234,
+		Subtype:         1,
+		ObjectID:        "1998-054A",
+		Latitude:        33.7512,
+		Longitude:      -117.8567,
+		Altitude:        400000,
+		VelocityX:       3100.0,
+		VelocityY:       -1200.0,
+		VelocityZ:       500.0,
+		Speed:           3400.0,
+		CourseOverGround: 135.0,
+		RadialVelocity:   -500.0,
+		OrbitalPeriod:   96.7,
+		Apogee:          40000,
+		Perigee:         400,
+		Inclination:     28.5,
+		SemiMajorAxis:   24300,
+		Eccentricity:    0.950,
+		MeanAnomaly:     180.0,
+		Time:            time.Now(),
+	}
+	buf := make([]byte, J18PayloadSize)
+	PackJ18SpaceTrack(orig, buf)
+	unpacked := UnpackJ18SpaceTrack(buf)
+
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if unpacked.ObjectID != orig.ObjectID {
+		t.Errorf("ObjectID: got %s, want %s", unpacked.ObjectID, orig.ObjectID)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J18 Latitude: PASS")
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
+
+// TestJ28SpaceTrackRoundtrip tests J28 Satellite OPIR pack/unpack.
+func TestJ28SpaceTrackRoundtrip(t *testing.T) {
+	orig := &J28SpaceTrack{
+		TrackNumber:     1234,
+		Time:           time.Now(),
+		Latitude:       33.7512,
+		Longitude:      -117.8567,
+		Altitude:       36000,
+		VelocityX:      3100.0,
+		VelocityY:      -1200.0,
+		VelocityZ:      500.0,
+		SatelliteID:    "26463",
+		OrbitalPeriod:  96.7,
+		Inclination:    28.5,
+		SemiMajorAxis:  24300,
+		Eccentricity:   0.001,
+		RightAscension: 180.0,
+		ArgPerigee:     90.0,
+		TrueAnomaly:    45.0,
+		IRIntensity:    300.0,
+		BackgroundTemp: 4.0,
+		DetectionConf:  0.95,
+		SNR:            15.0,
+	}
+	buf := make([]byte, J28PayloadSize)
+	PackJ28SpaceTrack(orig, buf)
+	unpacked := UnpackJ28SpaceTrack(buf)
+
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if unpacked.SatelliteID != orig.SatelliteID {
+		t.Errorf("SatelliteID: got %s, want %s", unpacked.SatelliteID, orig.SatelliteID)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J28 Latitude: PASS")
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
+
+// TestJ29SymbologyRoundtrip tests J29 Symbology pack/unpack.
+func TestJ29SymbologyRoundtrip(t *testing.T) {
+	orig := &J29Symbology{
+		TrackNumber:   1234,
+		Subtype:      1,
+		SymbolCode:   0xFFFF,
+		PatternType:  1,
+		FrameColor:   0x1F,
+		FillColor:    0x03,
+		LineStyle:    1,
+		LineThickness: 2,
+		AltitudeType: 0,
+		Latitude:     33.7512,
+		Longitude:   -117.8567,
+		Altitude:    5000,
+		Label:       "TEST",
+		Time:        time.Now(),
+	}
+	buf := make([]byte, J29PayloadSize)
+	PackJ29Symbology(orig, buf)
+	unpacked := UnpackJ29Symbology(buf)
+
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J29 Latitude: PASS")
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+	if unpacked.Label != orig.Label {
+		t.Errorf("Label: got %s, want %s", unpacked.Label, orig.Label)
+	}
+}
+
+// TestJ30IFFRoundtrip tests J30 IFF pack/unpack.
+func TestJ30IFFRoundtrip(t *testing.T) {
+	orig := &J30IFF{
+		TrackNumber:  1234,
+		Subtype:       1,
+		IFFCode:       0xA5A5A5A5,
+		FriendlyCode: 1,
+		Mode5Level:    2,
+		SatelliteID:   5678,
+		Latitude:     33.7512,
+		Longitude:    -117.8567,
+		Altitude:     10000,
+		ResponseTime: 0.5,
+		Confidence:   0.95,
+		Time:         time.Now(),
+	}
+	buf := make([]byte, J30PayloadSize)
+	PackJ30IFF(orig, buf)
+	unpacked := UnpackJ30IFF(buf)
+
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if unpacked.Mode5Level != orig.Mode5Level {
+		t.Errorf("Mode5Level: got %d, want %d", unpacked.Mode5Level, orig.Mode5Level)
+	}
+	if unpacked.IFFCode != orig.IFFCode {
+		t.Errorf("IFFCode: got %08x, want %08x", unpacked.IFFCode, orig.IFFCode)
+	}
+}
+
+// TestJ31FileTransferRoundtrip tests J31 File Transfer pack/unpack.
+// TestJ31FileTransferRoundtrip tests J31 File Transfer pack/unpack.
+func TestJ31FileTransferRoundtrip(t *testing.T) {
+	orig := &J31FileTransfer{
+		TransferID:  1234,
+		Subtype:     1,
+		ChunkIndex:  1,
+		ChunkSize:   16,
+		TotalChunks: 10,
+		FileSize:    1024000,
+		Checksum:    0xDEADBEEF,
+		Filename:    "data.bin",
+		Time:        time.Now(),
+	}
+	buf := make([]byte, J31HeaderSize)
+	PackJ31FileTransfer(orig, buf)
+	unpacked := UnpackJ31FileTransfer(buf)
+
+	if unpacked.TransferID != orig.TransferID {
+		t.Errorf("TransferID: got %d, want %d", unpacked.TransferID, orig.TransferID)
+	}
+	if unpacked.ChunkIndex != orig.ChunkIndex {
+		t.Errorf("ChunkIndex: got %d, want %d", unpacked.ChunkIndex, orig.ChunkIndex)
+	}
+	if unpacked.Filename != orig.Filename {
+		t.Errorf("Filename: got %s, want %s", unpacked.Filename, orig.Filename)
+	}
+}
