@@ -49,7 +49,8 @@ type J0TrackManagement struct {
 }
 
 // J0PayloadSize is the packed byte size of a J0 Track Management message.
-const J0PayloadSize = 36
+// Breakdown: TrackNum(2)+StatusType(1)+ForceClass(1)+Time(4)+Lat(3)+Lon(3)+Alt(3)+Speed(2)+Heading(2)+Quality(1)+PartNum(2)+SensorID(8)+CorrID(16) = 48
+const J0PayloadSize = 48
 
 // PackJ0TrackManagement packs a J0 Track Management message into buf.
 func PackJ0TrackManagement(j0 *J0TrackManagement, buf []byte) {

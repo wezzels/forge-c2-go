@@ -21,7 +21,8 @@ type J26Test struct {
 }
 
 // J26PayloadSize is the packed byte size of a J26 Test message.
-const J26PayloadSize = 11
+// Breakdown: Subtype(1)+TestID(2)+PartNum(2)+TestData(64)+Time(4) = 73
+const J26PayloadSize = 73
 
 // PackJ26Test packs a J26 Test message into buf.
 func PackJ26Test(j26 *J26Test, buf []byte) {

@@ -50,9 +50,9 @@ func PackJ6SensorRegistration(s *J6SensorRegistration, buf []byte) {
 
 	latP := PackLatitude(s.Latitude)
 	lonP := PackLongitude(s.Longitude)
-	PackUint32(latP, buf, off)
+	PackUint24(latP, buf, off)
 	off += 3
-	PackUint32(lonP, buf, off)
+	PackUint24(lonP, buf, off)
 	off += 3
 
 	altP := uint32(s.Altitude)

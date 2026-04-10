@@ -44,7 +44,8 @@ type J11DataTransfer struct {
 }
 
 // J11PayloadSize is the packed byte size of a J11 header (without data block).
-const J11PayloadSize = 32
+// Breakdown: TransferID(2)+Subtype(1)+Status(1)+RecordCount(2)+DataLen(4)+Offset(4)+Checksum(4)+DataType(1)+Filler(1)+PartSrc(2)+PartDst(2)+Lat(3)+Lon(3)+Alt(3)+Time(4) = 37
+const J11PayloadSize = 37
 
 // PackJ11DataTransfer packs a J11 Data Transfer header into buf.
 // The data block must be appended separately.
@@ -91,6 +92,7 @@ func PackJ11DataTransfer(j11 *J11DataTransfer, buf []byte) {
 
 	ms := PackMilliseconds(j11.Time)
 	PackUint32(ms, buf, off)
+	off += 4
 }
 
 // UnpackJ11DataTransfer unpacks a J11 Data Transfer header from buf.

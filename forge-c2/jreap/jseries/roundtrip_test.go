@@ -14,13 +14,71 @@ func floatApproxEq(a, b, tol float64) bool {
 	return diff <= tol
 }
 
-// J0TrackManagement - KNOWN BUG: J0PayloadSize=36 but fields require ~48 bytes.
-// PackJ0TrackManagement panics with "index out of range [36]"
-// Bug tracked in docs/PACK-BUGS.md
+// TestJ0TrackManagementRoundtrip tests J0 Track Management pack/unpack.
+func TestJ0TrackManagementRoundtrip(t *testing.T) {
+	orig := &J0TrackManagement{
+		TrackNumber:       12345,
+		TrackStatus:       TrackMgmtConfirmed,
+		MgtType:           J0TrackInitiation,
+		ForceType:         2,
+		Classification:    3,
+		Time:              time.Now(),
+		Latitude:          33.7512,
+		Longitude:         -117.8567,
+		Altitude:          10000,
+		Speed:             250.4,
+		Heading:           315.0,
+		Quality:           QualityIndicator{Quality: 2},
+		ParticipantNumber: 6789,
+		SensorID:          "RADAR-01",
+		CorrelationID:     "CORR-001",
+	}
+	buf := make([]byte, J0PayloadSize)
+	PackJ0TrackManagement(orig, buf)
+	unpacked := UnpackJ0TrackManagement(buf)
 
-// TestJ1NetworkInitRoundtrip - KNOWN BUG: Latitude unpacked as -89.5 instead of 33.75
-// Uses PackLatitudePacked but unpacks with wrong offset.
-// Bug tracked in docs/PACK-BUGS.md
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J0 Latitude: PASS (%.6f ~= %.6f)", unpacked.Latitude, orig.Latitude)
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
+
+// TestJ1NetworkInitRoundtrip tests J1 Network Initialization pack/unpack.
+func TestJ1NetworkInitRoundtrip(t *testing.T) {
+	orig := &J1NetworkInit{
+		NetworkID:         100,
+		MessageType:      1,
+		NetworkStatus:     2,
+		ParticipantCount:  5,
+		NodeID:           10,
+		ParticipantNumber: 1001,
+		Latitude:          33.7512,
+		Longitude:         -117.8567,
+		Altitude:          100,
+		Time:             time.Now(),
+		CapabilityFlags:   0x0F,
+		SoftwareVersion:   "v1.0.0",
+	}
+	buf := make([]byte, J1PayloadSize)
+	PackJ1NetworkInit(orig, buf)
+	unpacked := UnpackJ1NetworkInit(buf)
+
+	if unpacked.NetworkID != orig.NetworkID {
+		t.Errorf("NetworkID: got %d, want %d", unpacked.NetworkID, orig.NetworkID)
+	}
+	if unpacked.NodeID != orig.NodeID {
+		t.Errorf("NodeID: got %d, want %d", unpacked.NodeID, orig.NodeID)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.001) {
+		t.Logf("J1 Latitude: PASS (%.6f ~= %.6f)", unpacked.Latitude, orig.Latitude)
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
 
 // TestJ5EngagementStatusRoundtrip tests J5 Engagement Status pack/unpack.
 func TestJ5EngagementStatusRoundtrip(t *testing.T) {
@@ -55,8 +113,38 @@ func TestJ5EngagementStatusRoundtrip(t *testing.T) {
 	}
 }
 
-// J6SensorRegistration - KNOWN BUG: Latitude unpacked wrong (uses wrong pack function)
-// Bug tracked in docs/PACK-BUGS.md
+// TestJ6SensorRegistrationRoundtrip tests J6 Sensor Registration pack/unpack.
+func TestJ6SensorRegistrationRoundtrip(t *testing.T) {
+	orig := &J6SensorRegistration{
+		SensorID:       "TPY-2-1",
+		SensorType:     2, // RADAR
+		PlatformType:   1, // GROUND
+		Capability:     0x07, // TRACK | ENGAGE | SURVEIL
+		Latitude:       33.7512,
+		Longitude:      -117.8567,
+		Altitude:       1000,
+		Azimuth:        45.0,
+		Elevation:      30.0,
+		MaxRange:       2500,
+		ScanRate:       10.0,
+		NetworkID:      100,
+		ParticipantNum: 1001,
+		Status:         1, // ACTIVE
+		Timestamp:      time.Now(),
+	}
+	buf := make([]byte, J6PayloadSize)
+	PackJ6SensorRegistration(orig, buf)
+	unpacked := UnpackJ6SensorRegistration(buf)
+
+	if unpacked.NetworkID != orig.NetworkID {
+		t.Errorf("NetworkID: got %d, want %d", unpacked.NetworkID, orig.NetworkID)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J6 Latitude: PASS (%.6f ~= %.6f)", unpacked.Latitude, orig.Latitude)
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
 
 // TestJ7PlatformDataRoundtrip tests J7 Platform Data pack/unpack.
 func TestJ7PlatformDataRoundtrip(t *testing.T) {
@@ -80,10 +168,14 @@ func TestJ7PlatformDataRoundtrip(t *testing.T) {
 	if unpacked.TrackNumber != orig.TrackNumber {
 		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
 	}
-	if !floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J7 Latitude: PASS (%.6f ~= %.6f)", unpacked.Latitude, orig.Latitude)
+	} else {
 		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
 	}
-	if !floatApproxEq(unpacked.Speed, orig.Speed, 0.1) {
+	if floatApproxEq(unpacked.Speed, orig.Speed, 0.1) {
+		t.Logf("J7 Speed: PASS")
+	} else {
 		t.Errorf("Speed: got %f, want %f", unpacked.Speed, orig.Speed)
 	}
 }
@@ -140,8 +232,41 @@ func TestJ10OffsetRoundtrip(t *testing.T) {
 	}
 }
 
-// J11DataTransfer - KNOWN BUG: J11PayloadSize=32 but PackJ11DataTransfer writes beyond bounds
-// Bug tracked in docs/PACK-BUGS.md
+// TestJ11DataTransferRoundtrip tests J11 Data Transfer pack/unpack.
+func TestJ11DataTransferRoundtrip(t *testing.T) {
+	orig := &J11DataTransfer{
+		TransferID:     12345,
+		Subtype:        1,
+		TransferStatus: 1,
+		RecordCount:    10,
+		DataLength:     1000,
+		Offset:         0,
+		Checksum:       0x12345678,
+		DataType:       1,
+		Filler:         0,
+		ParticipantSrc: 1001,
+		ParticipantDst: 2002,
+		Latitude:       33.7512,
+		Longitude:      -117.8567,
+		Altitude:       1000,
+		Time:          time.Now(),
+	}
+	buf := make([]byte, J11PayloadSize)
+	PackJ11DataTransfer(orig, buf)
+	unpacked := UnpackJ11DataTransfer(buf)
+
+	if unpacked.TransferID != orig.TransferID {
+		t.Errorf("TransferID: got %d, want %d", unpacked.TransferID, orig.TransferID)
+	}
+	if unpacked.RecordCount != orig.RecordCount {
+		t.Errorf("RecordCount: got %d, want %d", unpacked.RecordCount, orig.RecordCount)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J11 Latitude: PASS")
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+}
 
 // TestJ12AlertRoundtrip tests J12 Alert pack/unpack.
 func TestJ12AlertRoundtrip(t *testing.T) {
@@ -193,13 +318,33 @@ func TestJ13PrecisionParticipantRoundtrip(t *testing.T) {
 	if unpacked.TrackNumber != orig.TrackNumber {
 		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
 	}
-	if !floatApproxEq(unpacked.Latitude, orig.Latitude, 0.001) {
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.001) {
+		t.Logf("J13 Latitude: PASS")
+	} else {
 		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
 	}
 }
 
-// J26Test - KNOWN BUG: J26PayloadSize=11 but PackJ26Test writes beyond bounds (TestData string)
-// Bug tracked in docs/PACK-BUGS.md
+// TestJ26TestRoundtrip tests J26 Test pack/unpack.
+func TestJ26TestRoundtrip(t *testing.T) {
+	orig := &J26Test{
+		Subtype:           1,
+		TestID:            12345,
+		ParticipantNumber: 6789,
+		TestData:          "TESTDATA",
+		Time:              time.Now(),
+	}
+	buf := make([]byte, J26PayloadSize)
+	PackJ26Test(orig, buf)
+	unpacked := UnpackJ26Test(buf)
+
+	if unpacked.TestID != orig.TestID {
+		t.Errorf("TestID: got %d, want %d", unpacked.TestID, orig.TestID)
+	}
+	if unpacked.Subtype != orig.Subtype {
+		t.Errorf("Subtype: got %d, want %d", unpacked.Subtype, orig.Subtype)
+	}
+}
 
 // TestJ27TimeRoundtrip tests J27 Time pack/unpack.
 func TestJ27TimeRoundtrip(t *testing.T) {
