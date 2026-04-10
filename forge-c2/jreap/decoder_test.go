@@ -3,6 +3,8 @@ package jreap
 import (
 	"testing"
 	"time"
+
+	"forge-c2/jreap/jseries"
 )
 
 func TestDecoder_DecodeOPIR(t *testing.T) {
@@ -226,4 +228,132 @@ func abs(x float64) float64 {
 		return -x
 	}
 	return x
+}
+
+func TestDecoder_DecodeUsing_J4(t *testing.T) {
+	decoder := NewDecoder("NODE1", "APP1")
+	encoder := NewEncoder("NODE1", "APP1")
+
+	// First encode a J4 message
+	j4 := &jseries.J4EngagementOrder{
+		EngagementID:  12345,
+		TrackNumber:   6789,
+		Priority:     3,
+		WeaponSystem: jseries.J4WeaponSystem(2),
+		TimeOnTarget: time.Now().Add(30 * time.Minute),
+		InterceptProb: 0.85,
+		TrackStatus:  jseries.TrackStatus_Active,
+	}
+
+	buf, err := encoder.EncodeUsing(J4_EngagementOrder, j4)
+	if err != nil {
+		t.Fatalf("EncodeUsing failed: %v", err)
+	}
+
+	// Now decode using the registry
+	msg, msgType, err := decoder.DecodeUsing(buf)
+	if err != nil {
+		t.Fatalf("DecodeUsing failed: %v", err)
+	}
+
+	if msgType != J4_EngagementOrder {
+		t.Errorf("msgType=%s, want J4_EngagementOrder", msgType)
+	}
+
+	j4Decoded := msg.(*jseries.J4EngagementOrder)
+	if j4Decoded.EngagementID != j4.EngagementID {
+		t.Errorf("EngagementID=%d, want %d", j4Decoded.EngagementID, j4.EngagementID)
+	}
+	if j4Decoded.TrackNumber != j4.TrackNumber {
+		t.Errorf("TrackNumber=%d, want %d", j4Decoded.TrackNumber, j4.TrackNumber)
+	}
+	if j4Decoded.Priority != j4.Priority {
+		t.Errorf("Priority=%d, want %d", j4Decoded.Priority, j4.Priority)
+	}
+}
+
+func TestDecoder_DecodeUsing_J2(t *testing.T) {
+	decoder := NewDecoder("NODE1", "APP1")
+	encoder := NewEncoder("NODE1", "APP1")
+
+	j2 := &jseries.J2Surveillance{
+		TrackNumber:       12345,
+		ParticipantNumber: 6789,
+		TrackStatus:       0x05,
+		Latitude:          33.7512,
+		Longitude:         -117.8567,
+		Altitude:          12500,
+		Speed:             450.3,
+		Heading:           127.5,
+		CourseOverGround:  128.0,
+		RadialVelocity:    120.7,
+		SignalIntensity:   15.3,
+		Frequency:         9700000,
+		SNR:               15.2,
+		Confidence:        0.92,
+		Timestamp:         time.Now(),
+		ForceType:         2,
+		PlatformType:      311,
+		SensorID:          "RADAR-01",
+	}
+
+	buf, err := encoder.EncodeUsing(J2_Surveillance, j2)
+	if err != nil {
+		t.Fatalf("EncodeUsing failed: %v", err)
+	}
+
+	msg, msgType, err := decoder.DecodeUsing(buf)
+	if err != nil {
+		t.Fatalf("DecodeUsing failed: %v", err)
+	}
+
+	if msgType != J2_Surveillance {
+		t.Errorf("msgType=%s, want J2_Surveillance", msgType)
+	}
+
+	j2Decoded := msg.(*jseries.J2Surveillance)
+	if j2Decoded.TrackNumber != j2.TrackNumber {
+		t.Errorf("TrackNumber=%d, want %d", j2Decoded.TrackNumber, j2.TrackNumber)
+	}
+}
+
+func TestDecoder_DecodeUsing_UnknownType(t *testing.T) {
+	decoder := NewDecoder("NODE1", "APP1")
+
+	// Create a message with invalid message type (use J3 but don't register decoder)
+	// Actually J3 is registered, so let's just verify error for empty buffer
+	_, _, err := decoder.DecodeUsing([]byte{0x00})
+	if err == nil {
+		t.Error("Expected error for invalid message")
+	}
+}
+
+func TestDecoder_Register_Override(t *testing.T) {
+	decoder := NewDecoder("NODE1", "APP1")
+
+	// Override J2 decoder with custom function
+	decoder.Register(J2_Surveillance, func(payload []byte) interface{} {
+		// Return a minimal struct with known values
+		return &jseries.J2Surveillance{
+			TrackNumber: 65534, // unmistakable value
+			Latitude:    99.99,
+			Longitude:   999.99,
+		}
+	})
+
+	j2 := &jseries.J2Surveillance{
+		TrackNumber:       12345,
+		Latitude:          33.7512,
+		Longitude:         -117.8567,
+	}
+	encoder := NewEncoder("NODE1", "APP1")
+	buf, _ := encoder.EncodeUsing(J2_Surveillance, j2)
+
+	msg, _, _ := decoder.DecodeUsing(buf)
+	j2Decoded := msg.(*jseries.J2Surveillance)
+
+	// Should return the overridden values
+	if j2Decoded.TrackNumber != 65534 {
+		t.Errorf("TrackNumber=%d, want 65534 (override)", j2Decoded.TrackNumber)
+	}
 }

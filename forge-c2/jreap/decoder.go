@@ -8,17 +8,125 @@ import (
 	"forge-c2/mdpa"
 )
 
+// decodeFn is a function that decodes a J-series message from a payload byte slice.
+type decodeFn func([]byte) interface{}
+
 // Decoder handles JREAP-C decoding of FORGE messages.
 type Decoder struct {
 	nodeID        string
 	applicationID string
+	// registry maps MessageType → decodeFn for data-driven decoding
+	registry map[MessageType]decodeFn
 }
 
 // NewDecoder creates a new JREAP decoder.
 func NewDecoder(nodeID, appID string) *Decoder {
-	return &Decoder{
+	d := &Decoder{
 		nodeID:        nodeID,
 		applicationID: appID,
+		registry:      make(map[MessageType]decodeFn),
+	}
+	d.registerDefaults()
+	return d
+}
+
+// Register adds a decoder function for a message type.
+// This allows custom decoders to be registered at runtime.
+func (d *Decoder) Register(msgType MessageType, fn decodeFn) {
+	d.registry[msgType] = fn
+}
+
+// DecodeUsing decodes a message using the registered decoder for its type.
+// Returns the decoded message as interface{} and the message type.
+// Returns error if no decoder is registered for this message type.
+func (d *Decoder) DecodeUsing(msg []byte) (interface{}, MessageType, error) {
+	hdr, payload, _, err := DecodeFull(msg)
+	if err != nil {
+		return nil, 0, fmt.Errorf("JREAP decode failed: %w", err)
+	}
+
+	msgType := MessageType(hdr.MessageType)
+	fn, ok := d.registry[msgType]
+	if !ok {
+		return nil, msgType, fmt.Errorf("no decoder registered for message type %s", msgType)
+	}
+
+	return fn(payload), msgType, nil
+}
+
+// registerDefaults registers all built-in J-series decoders.
+func (d *Decoder) registerDefaults() {
+	d.registry[J0_TrackManagement] = func(payload []byte) interface{} {
+		return jseries.UnpackJ0TrackManagement(payload)
+	}
+	d.registry[J1_NetworkInitialize] = func(payload []byte) interface{} {
+		return jseries.UnpackJ1NetworkInit(payload)
+	}
+	d.registry[J2_Surveillance] = func(payload []byte) interface{} {
+		return jseries.UnpackJ2Surveillance(payload)
+	}
+	d.registry[J4_EngagementOrder] = func(payload []byte) interface{} {
+		return jseries.UnpackJ4EngagementOrder(payload)
+	}
+	d.registry[J5_EngagementStatus] = func(payload []byte) interface{} {
+		return jseries.UnpackJ5EngagementStatus(payload)
+	}
+	d.registry[J6_SensorRegistration] = func(payload []byte) interface{} {
+		return jseries.UnpackJ6SensorRegistration(payload)
+	}
+	d.registry[J7_Platform] = func(payload []byte) interface{} {
+		return jseries.UnpackJ7PlatformData(payload)
+	}
+	d.registry[J8_Radio] = func(payload []byte) interface{} {
+		return jseries.UnpackJ8Radio(payload)
+	}
+	d.registry[J9_ElectronicAttack] = func(payload []byte) interface{} {
+		return jseries.UnpackJ9ElectronicAttack(payload)
+	}
+	d.registry[J10_Offset] = func(payload []byte) interface{} {
+		return jseries.UnpackJ10Offset(payload)
+	}
+	d.registry[J11_DataTransfer] = func(payload []byte) interface{} {
+		return jseries.UnpackJ11DataTransfer(payload)
+	}
+	d.registry[J12_Alert] = func(payload []byte) interface{} {
+		return jseries.UnpackJ12Alert(payload)
+	}
+	d.registry[J13_PreciseParticipant] = func(payload []byte) interface{} {
+		return jseries.UnpackJ13PrecisionParticipant(payload)
+	}
+	d.registry[J14_ProcessSpec] = func(payload []byte) interface{} {
+		return jseries.UnpackJ14ProcessSpec(payload)
+	}
+	d.registry[J15_Command] = func(payload []byte) interface{} {
+		return jseries.UnpackJ15Command(payload)
+	}
+	d.registry[J16_Acknowledge] = func(payload []byte) interface{} {
+		return jseries.UnpackJ16Acknowledge(payload)
+	}
+	d.registry[J17_InitiateTransfer] = func(payload []byte) interface{} {
+		return jseries.UnpackJ17InitiateTransfer(payload)
+	}
+	d.registry[J18_SpaceTrack] = func(payload []byte) interface{} {
+		return jseries.UnpackJ18SpaceTrack(payload)
+	}
+	d.registry[J26_Test] = func(payload []byte) interface{} {
+		return jseries.UnpackJ26Test(payload)
+	}
+	d.registry[J27_Time] = func(payload []byte) interface{} {
+		return jseries.UnpackJ27Time(payload)
+	}
+	d.registry[J28_SatelliteOPIR] = func(payload []byte) interface{} {
+		return jseries.UnpackJ28SpaceTrack(payload)
+	}
+	d.registry[J29_Symbology] = func(payload []byte) interface{} {
+		return jseries.UnpackJ29Symbology(payload)
+	}
+	d.registry[J30_IFF] = func(payload []byte) interface{} {
+		return jseries.UnpackJ30IFF(payload)
+	}
+	d.registry[J31_FileTransfer] = func(payload []byte) interface{} {
+		return jseries.UnpackJ31FileTransfer(payload)
 	}
 }
 
