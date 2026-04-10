@@ -420,3 +420,43 @@ func TestJ2SurveillanceRoundtrip(t *testing.T) {
 		t.Errorf("SensorID: got %s, want %s", unpacked.SensorID, orig.SensorID)
 	}
 }
+
+// TestJ3TrackUpdateRoundtrip tests J3 Track Update pack/unpack.
+func TestJ3TrackUpdateRoundtrip(t *testing.T) {
+	orig := &J3TrackUpdate{
+		TrackNumber:  12345,
+		Time:        time.Now(),
+		Latitude:    33.7512,
+		Longitude:   -117.8567,
+		Altitude:   10000,
+		Speed:      250.4,
+		Heading:    315.0,
+		Status:     2, // ACTIVE
+		ThreatLevel: 3,
+		Quality:    QualityIndicator{Quality: 2},
+		PlatformType: 1,
+		ForceType:  2,
+	}
+	buf := make([]byte, J3PayloadSize)
+	PackJ3TrackUpdate(orig, buf)
+	unpacked := UnpackJ3TrackUpdate(buf)
+
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if floatApproxEq(unpacked.Latitude, orig.Latitude, 0.01) {
+		t.Logf("J3 Latitude: PASS (%.6f ~= %.6f)", unpacked.Latitude, orig.Latitude)
+	} else {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, orig.Latitude)
+	}
+	if floatApproxEq(unpacked.Longitude, orig.Longitude, 0.01) {
+		t.Logf("J3 Longitude: PASS (%.6f ~= %.6f)", unpacked.Longitude, orig.Longitude)
+	} else {
+		t.Errorf("Longitude: got %f, want %f", unpacked.Longitude, orig.Longitude)
+	}
+	if floatApproxEq(unpacked.Speed, orig.Speed, 0.1) {
+		t.Logf("J3 Speed: PASS")
+	} else {
+		t.Errorf("Speed: got %f, want %f", unpacked.Speed, orig.Speed)
+	}
+}
