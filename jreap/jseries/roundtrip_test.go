@@ -460,3 +460,73 @@ func TestJ3TrackUpdateRoundtrip(t *testing.T) {
 		t.Errorf("Speed: got %f, want %f", unpacked.Speed, orig.Speed)
 	}
 }
+
+// TestJ4EngagementOrderRoundtrip tests J4 Engagement Order pack/unpack.
+func TestJ4EngagementOrderRoundtrip(t *testing.T) {
+	orig := &J4EngagementOrder{
+		EngagementID:   12345,
+		TrackNumber:   6789,
+		Priority:      1,
+		WeaponSystem:  2,
+		TimeOnTarget:  time.Now(),
+		InterceptProb: 0.75,
+		TrackStatus:   TrackStatus_Active,
+	}
+	buf := make([]byte, J4PayloadSize)
+	PackJ4EngagementOrder(orig, buf)
+	unpacked := UnpackJ4EngagementOrder(buf)
+
+	if unpacked.EngagementID != orig.EngagementID {
+		t.Errorf("EngagementID: got %d, want %d", unpacked.EngagementID, orig.EngagementID)
+	}
+	if unpacked.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", unpacked.TrackNumber, orig.TrackNumber)
+	}
+	if unpacked.Priority != orig.Priority {
+		t.Errorf("Priority: got %d, want %d", unpacked.Priority, orig.Priority)
+	}
+	if floatApproxEq(unpacked.InterceptProb, orig.InterceptProb, 0.01) {
+		t.Logf("J4 InterceptProb: PASS")
+	} else {
+		t.Errorf("InterceptProb: got %f, want %f", unpacked.InterceptProb, orig.InterceptProb)
+	}
+}
+
+// TestJ8RadioRoundtrip tests J8 Radio pack/unpack with variable length.
+func TestJ8RadioRoundtrip(t *testing.T) {
+	for _, textLen := range []int{0, 10} {
+		msgText := make([]byte, textLen)
+		for i := range msgText {
+			msgText[i] = byte(i % 256)
+		}
+		orig := &J8Radio{
+			TrackNumber:       1234,
+			Subtype:           1,
+			RadioStatus:       J8RadioActive,
+			ParticipantNumber: 111,
+			NetworkID:         222,
+			Frequency:         300000000,
+			Modulation:        3,
+			Bandwidth:         25000,
+			SignalStrength:    -45.0,
+			SNR:              20.0,
+			Latitude:         33.7512,
+			Longitude:        -117.8567,
+			Altitude:         5000,
+			MessageLength:     uint16(textLen),
+			MessageText:       string(msgText),
+		}
+		
+		buf := make([]byte, J8PayloadSize(textLen))
+		PackJ8Radio(orig, buf)
+		unpacked := UnpackJ8Radio(buf)
+
+		if unpacked.ParticipantNumber != orig.ParticipantNumber {
+			t.Errorf("[len=%d] ParticipantNumber: got %d, want %d", textLen, unpacked.ParticipantNumber, orig.ParticipantNumber)
+		}
+		if unpacked.MessageLength != orig.MessageLength {
+			t.Errorf("[len=%d] MessageLength: got %d, want %d", textLen, unpacked.MessageLength, orig.MessageLength)
+		}
+	}
+	t.Logf("J8 Radio: PASS (0, 10 byte variants)")
+}

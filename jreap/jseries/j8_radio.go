@@ -44,7 +44,7 @@ type J8Radio struct {
 }
 
 // J8PayloadSizeWithoutMessage is the fixed header size (without message text).
-const J8PayloadSizeWithoutMessage = 30
+const J8PayloadSizeWithoutMessage = 33
 
 // MaxMessageText is the maximum length of the message text field.
 const MaxMessageText = 128
