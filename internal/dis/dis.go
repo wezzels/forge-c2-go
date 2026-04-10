@@ -772,3 +772,240 @@ func NewFirePDU(firingSite, firingApp, firingEntity uint16) *DISFirePDU {
 		FiringEntityNumber:     firingEntity,
 	}
 }
+
+// DISDetonationPDU represents a Detonation PDU (Type 4, Family 2).
+// Used when a munition detonates (impact or airburst).
+type DISDetonationPDU struct {
+	Header DISHeader
+
+	// Detonating Entity ID
+	EventSiteNumber       uint16
+	EventApplicationNumber uint16
+	EventNumber          uint16
+
+	// Target Entity ID (optional, zero if none)
+	TargetSiteNumber       uint16
+	TargetApplicationNumber uint16
+	TargetEntityNumber     uint16
+
+	// Munition Entity ID
+	MunitionSiteNumber     uint16
+	MunitionApplicationNumber uint16
+	MunitionEntityNumber   uint16
+
+	// Event ID for receipt
+	EventID1 uint16
+	EventID2 uint16
+
+	// Fire Mission Index
+	FireMissionIndex uint32
+
+	// Munition type
+	MunitionType EntityType
+
+	// Explosion type
+	ExplosionType uint8
+
+	// Velocity at detonation
+	Velocity float64
+
+	// Location of detonation
+	Latitude  float64
+	Longitude float64
+	Altitude float64
+
+	// Optional: fused munition tracking data
+	FusedTrackNumber uint16
+}
+
+// DetonationPDUSize is the packed size of a Detonation PDU.
+const DetonationPDUSize = 121
+
+// PackDISDetonationPDU packs a Detonation PDU.
+func PackDISDetonationPDU(pdu *DISDetonationPDU, buf []byte) {
+	if len(buf) < DetonationPDUSize {
+		return
+	}
+	off := 0
+
+	hbuf := make([]byte, 16)
+	PackDISHeader(&pdu.Header, hbuf)
+	copy(buf[off:], hbuf)
+	off += 16
+
+	// Detonating Entity ID (6)
+	binary.LittleEndian.PutUint16(buf[off:], pdu.EventSiteNumber)
+	off += 2
+	binary.LittleEndian.PutUint16(buf[off:], pdu.EventApplicationNumber)
+	off += 2
+	binary.LittleEndian.PutUint16(buf[off:], pdu.EventNumber)
+	off += 2
+
+	// Target Entity ID (6)
+	binary.LittleEndian.PutUint16(buf[off:], pdu.TargetSiteNumber)
+	off += 2
+	binary.LittleEndian.PutUint16(buf[off:], pdu.TargetApplicationNumber)
+	off += 2
+	binary.LittleEndian.PutUint16(buf[off:], pdu.TargetEntityNumber)
+	off += 2
+
+	// Munition Entity ID (6)
+	binary.LittleEndian.PutUint16(buf[off:], pdu.MunitionSiteNumber)
+	off += 2
+	binary.LittleEndian.PutUint16(buf[off:], pdu.MunitionApplicationNumber)
+	off += 2
+	binary.LittleEndian.PutUint16(buf[off:], pdu.MunitionEntityNumber)
+	off += 2
+
+	// Event IDs (4)
+	binary.LittleEndian.PutUint16(buf[off:], pdu.EventID1)
+	off += 2
+	binary.LittleEndian.PutUint16(buf[off:], pdu.EventID2)
+	off += 2
+
+	// Fire Mission Index (4)
+	binary.LittleEndian.PutUint32(buf[off:], pdu.FireMissionIndex)
+	off += 4
+
+	// Munition Type (8)
+	buf[off] = pdu.MunitionType.Kind
+	off++
+	buf[off] = pdu.MunitionType.Domain
+	off++
+	binary.LittleEndian.PutUint16(buf[off:], pdu.MunitionType.Country)
+	off += 2
+	buf[off] = pdu.MunitionType.Category
+	off++
+	buf[off] = pdu.MunitionType.Subcategory
+	off++
+	buf[off] = pdu.MunitionType.Specific
+	off++
+	buf[off] = pdu.MunitionType.Extra1
+	off++
+
+	// Explosion Type (1)
+	buf[off] = pdu.ExplosionType
+	off++
+
+	// Velocity (4)
+	binary.LittleEndian.PutUint32(buf[off:], floatToBits(pdu.Velocity))
+	off += 4
+
+	// Location (24)
+	latVal := int64(pdu.Latitude * 10000000)
+	binary.LittleEndian.PutUint64(buf[off:], uint64(latVal))
+	off += 8
+	lonVal := int64(pdu.Longitude * 10000000)
+	binary.LittleEndian.PutUint64(buf[off:], uint64(lonVal))
+	off += 8
+	altVal := int64(pdu.Altitude * 1000)
+	binary.LittleEndian.PutUint64(buf[off:], uint64(altVal))
+	off += 8
+
+	// Fused Track Number (2)
+	binary.LittleEndian.PutUint16(buf[off:], pdu.FusedTrackNumber)
+}
+
+// UnpackDISDetonationPDU unpacks a Detonation PDU.
+func UnpackDISDetonationPDU(buf []byte) *DISDetonationPDU {
+	if len(buf) < DetonationPDUSize {
+		return nil
+	}
+	pdu := &DISDetonationPDU{}
+	off := 0
+
+	pdu.Header = *UnpackDISHeader(buf[off:])
+	off += 16
+
+	// Detonating Entity ID
+	pdu.EventSiteNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.EventApplicationNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.EventNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+
+	// Target Entity ID
+	pdu.TargetSiteNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.TargetApplicationNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.TargetEntityNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+
+	// Munition Entity ID
+	pdu.MunitionSiteNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.MunitionApplicationNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.MunitionEntityNumber = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+
+	// Event IDs
+	pdu.EventID1 = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.EventID2 = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+
+	// Fire Mission Index
+	pdu.FireMissionIndex = binary.LittleEndian.Uint32(buf[off:])
+	off += 4
+
+	// Munition Type
+	pdu.MunitionType.Kind = buf[off]
+	off++
+	pdu.MunitionType.Domain = buf[off]
+	off++
+	pdu.MunitionType.Country = binary.LittleEndian.Uint16(buf[off:])
+	off += 2
+	pdu.MunitionType.Category = buf[off]
+	off++
+	pdu.MunitionType.Subcategory = buf[off]
+	off++
+	pdu.MunitionType.Specific = buf[off]
+	off++
+	pdu.MunitionType.Extra1 = buf[off]
+	off++
+
+	// Explosion Type
+	pdu.ExplosionType = buf[off]
+	off++
+
+	// Velocity
+	pdu.Velocity = bitsToFloat(binary.LittleEndian.Uint32(buf[off:]))
+	off += 4
+
+	// Location
+	latVal := int64(binary.LittleEndian.Uint64(buf[off:]))
+	pdu.Latitude = float64(latVal) / 10000000
+	off += 8
+	lonVal := int64(binary.LittleEndian.Uint64(buf[off:]))
+	pdu.Longitude = float64(lonVal) / 10000000
+	off += 8
+	altVal := int64(binary.LittleEndian.Uint64(buf[off:]))
+	pdu.Altitude = float64(altVal) / 1000
+	off += 8
+
+	// Fused Track Number
+	pdu.FusedTrackNumber = binary.LittleEndian.Uint16(buf[off:])
+
+	return pdu
+}
+
+// NewDetonationPDU creates a new Detonation PDU.
+func NewDetonationPDU(eventSite, eventApp, eventNum uint16) *DISDetonationPDU {
+	now := time.Now()
+	return &DISDetonationPDU{
+		Header: DISHeader{
+			ProtocolVersion: DISProtocolVersion,
+			ExerciseID:      1,
+			PDUHeaderLength: 16,
+			PDUType:        TypeDetonation,
+			Family:         FamilyWarfare,
+			Timestamp:      uint32(now.UnixMilli() / 10),
+		},
+		EventSiteNumber:       eventSite,
+		EventApplicationNumber: eventApp,
+		EventNumber:          eventNum,
+	}
+}

@@ -159,3 +159,91 @@ func TestDISConstants(t *testing.T) {
 		t.Errorf("TypeEntityState: got %d, want %d", TypeEntityState, 1)
 	}
 }
+
+func TestDetonationPDUNew(t *testing.T) {
+	pdu := NewDetonationPDU(1, 2, 3)
+
+	if pdu.EventSiteNumber != 1 {
+		t.Errorf("EventSiteNumber: got %d, want %d", pdu.EventSiteNumber, 1)
+	}
+	if pdu.Header.PDUType != TypeDetonation {
+		t.Errorf("PDUType: got %d, want %d", pdu.Header.PDUType, TypeDetonation)
+	}
+	if pdu.Header.Family != FamilyWarfare {
+		t.Errorf("Family: got %d, want %d", pdu.Header.Family, FamilyWarfare)
+	}
+}
+
+func TestDetonationPDURoundtrip(t *testing.T) {
+	orig := NewDetonationPDU(1, 2, 3)
+	orig.TargetSiteNumber = 10
+	orig.TargetApplicationNumber = 11
+	orig.TargetEntityNumber = 12
+	orig.MunitionSiteNumber = 20
+	orig.MunitionApplicationNumber = 21
+	orig.MunitionEntityNumber = 22
+	orig.FireMissionIndex = 12345
+	orig.ExplosionType = 1 // Impact
+	orig.Velocity = 500.0
+	orig.Latitude = 33.7512
+	orig.Longitude = -117.8567
+	orig.Altitude = 10000
+	orig.FusedTrackNumber = 999
+
+	buf := make([]byte, DetonationPDUSize)
+	PackDISDetonationPDU(orig, buf)
+	unpacked := UnpackDISDetonationPDU(buf)
+
+	if unpacked.TargetEntityNumber != orig.TargetEntityNumber {
+		t.Errorf("TargetEntityNumber: got %d, want %d", unpacked.TargetEntityNumber, orig.TargetEntityNumber)
+	}
+	if unpacked.MunitionEntityNumber != orig.MunitionEntityNumber {
+		t.Errorf("MunitionEntityNumber: got %d, want %d", unpacked.MunitionEntityNumber, orig.MunitionEntityNumber)
+	}
+	if unpacked.FireMissionIndex != orig.FireMissionIndex {
+		t.Errorf("FireMissionIndex: got %d, want %d", unpacked.FireMissionIndex, orig.FireMissionIndex)
+	}
+	if !floatApproxEq(unpacked.Velocity, 500.0, 1.0) {
+		t.Errorf("Velocity: got %f, want %f", unpacked.Velocity, 500.0)
+	}
+	if !floatApproxEq(unpacked.Latitude, 33.7512, 0.01) {
+		t.Errorf("Latitude: got %f, want %f", unpacked.Latitude, 33.7512)
+	}
+}
+
+func TestMapperDISToJSeries(t *testing.T) {
+	pdu := NewEntityStatePDU(1, 2, 3)
+	pdu.SetLocation(33.7512, -117.8567, 10000)
+	pdu.SetOrientation(0, 0, 90.0) // Heading 90 degrees
+	pdu.SetVelocity(250.0, 0, 0)
+	pdu.EntityType.Country = 200
+
+	site, app, entity, lat, _, _, heading, speed, _, _ := DISToJSeries(pdu)
+
+	if site != 1 || app != 2 || entity != 3 {
+		t.Errorf("Entity IDs: got %d/%d/%d, want 1/2/3", site, app, entity)
+	}
+	if !floatApproxEq(lat, 33.7512, 0.01) {
+		t.Errorf("Latitude: got %f, want %f", lat, 33.7512)
+	}
+	if !floatApproxEq(heading, 90.0, 1.0) {
+		t.Errorf("Heading: got %f, want %f", heading, 90.0)
+	}
+	if !floatApproxEq(speed, 250.0, 1.0) {
+		t.Errorf("Speed: got %f, want %f", speed, 250.0)
+	}
+}
+
+func TestMapperJSeriesToDIS(t *testing.T) {
+	pdu := JSeriesToDIS(123, 33.7512, -117.8567, 10000, 90.0, 250.0, 2, 1, 2)
+
+	if pdu.EntityNumber != 123 {
+		t.Errorf("EntityNumber: got %d, want %d", pdu.EntityNumber, 123)
+	}
+	if !floatApproxEq(pdu.Latitude, 33.7512, 0.01) {
+		t.Errorf("Latitude: got %f, want %f", pdu.Latitude, 33.7512)
+	}
+	if !floatApproxEq(pdu.VelocityX, 250.0, 1.0) {
+		t.Errorf("VelocityX: got %f, want %f", pdu.VelocityX, 250.0)
+	}
+}
