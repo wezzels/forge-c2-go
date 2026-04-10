@@ -29,8 +29,8 @@ func (d *Decoder) NodeID() string {
 
 // DecodedMessage holds decoded JREAP bytes plus extracted metadata.
 type DecodedMessage struct {
-	Header   *Header
-	Metadata *mdpa.MDPAMetadata
+	Header     *Header
+	Metadata   *mdpa.MDPAMetadata
 	RawPayload []byte
 }
 
@@ -467,9 +467,9 @@ func (d *Decoder) unpackTrackUpdate(payload []byte, meta *mdpa.MDPAMetadata) (*D
 		Latitude:    (float64(latVal)/float64(0xFFFFFF))*180.0 - 90.0,
 		Longitude:   (float64(lonVal)/float64(0xFFFFFF))*360.0 - 180.0,
 		Altitude:    float64(altVal),
-		Speed:      float64(speedVal) / 10.0,
-		Heading:    float64(headingVal) / 100.0,
-		Status:     decodeTrackStatus(payload[19]),
+		Speed:       float64(speedVal) / 10.0,
+		Heading:     float64(headingVal) / 100.0,
+		Status:      decodeTrackStatus(payload[19]),
 		ThreatLevel: int(payload[20]),
 	}
 
@@ -521,11 +521,11 @@ func (d *Decoder) unpackEngagementOrder(payload []byte, meta *mdpa.MDPAMetadata)
 	probVal := uint16(payload[12])<<8 | uint16(payload[13])
 
 	return &DecodedEngagementOrder{
-		Priority:     int(payload[6]),
-		WeaponSystem: decodeWeapon(payload[7]),
-		TimeOnTarget: time.UnixMilli(int64(tot)).UTC(),
+		Priority:      int(payload[6]),
+		WeaponSystem:  decodeWeapon(payload[7]),
+		TimeOnTarget:  time.UnixMilli(int64(tot)).UTC(),
 		InterceptProb: float64(probVal) / 10000.0,
-		Status:       decodeEngagementStatus(payload[14]),
+		Status:        decodeEngagementStatus(payload[14]),
 	}, nil
 }
 

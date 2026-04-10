@@ -12,10 +12,10 @@ import (
 // opirHandler processes J28 OPIR satellite track messages.
 // Replaces direct correlator.ProcessEvent calls from the main consumer.
 type opirHandler struct {
-	decoder     *jreap.Decoder
-	correlator  *TrackCorrelator
-	trackStore  *TrackStore
-	c2bmc       *C2BMCInterface
+	decoder    *jreap.Decoder
+	correlator *TrackCorrelator
+	trackStore *TrackStore
+	c2bmc      *C2BMCInterface
 }
 
 // newOpIRHandler creates a new OPIR message handler.

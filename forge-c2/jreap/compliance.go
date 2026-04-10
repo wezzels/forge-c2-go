@@ -7,18 +7,18 @@ import (
 
 // ComplianceReport holds the result of a message compliance check.
 type ComplianceReport struct {
-	Valid       bool      // true if all checks passed
+	Valid       bool // true if all checks passed
 	MessageType MessageType
-	Errors      []string  // list of validation failures
-	Warnings    []string  // non-critical issues
+	Errors      []string // list of validation failures
+	Warnings    []string // non-critical issues
 	CheckedAt   time.Time
 }
 
 // FieldViolation records a single field that failed validation.
 type FieldViolation struct {
-	Field   string
-	Value   interface{}
-	Reason  string
+	Field  string
+	Value  interface{}
+	Reason string
 }
 
 // ValidateJ3 validates a J3.0 Track Update message against MIL-STD-6016 requirements.

@@ -43,8 +43,8 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Protocol:       ProtocolUDP,
-		BufSize:       8192,
-		TCPTimeout:    30 * time.Second,
+		BufSize:        8192,
+		TCPTimeout:     30 * time.Second,
 		MaxConnections: 10,
 	}
 }
@@ -52,7 +52,7 @@ func DefaultConfig() *Config {
 // Errors for transport layer.
 var (
 	ErrNotConnected     = errors.New("not connected")
-	ErrConnectionFailed  = errors.New("connection failed")
+	ErrConnectionFailed = errors.New("connection failed")
 	ErrWriteFailed      = errors.New("write failed")
 	ErrReadFailed       = errors.New("read failed")
 	ErrInvalidAddress   = errors.New("invalid address")

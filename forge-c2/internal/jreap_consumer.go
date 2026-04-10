@@ -17,19 +17,19 @@ import (
 //   - engagementHandler:    J4 (engagement order), J5 (engagement status)
 //   - alertHandler:         J12 (alert/notification)
 //   - networkHandler:       J1 (net init), J6 (sensor reg), J7 (platform/sensor), J8 (radio)
-//                          J9 (EW), J10 (offset), J11 (data transfer)
+//     J9 (EW), J10 (offset), J11 (data transfer)
 //   - coordinationHandler: J13 (precise participant), J14 (process spec), J15 (command), J16 (ack), J17 (initiate xfer)
 //
 // This separation means each message type can be processed, monitored, and
 // scaled independently — matching the NOS3 multi-app architecture.
 type JREAPConsumer struct {
-	decoder           *jreap.Decoder
-	trackMgr          *trackManagerHandler
-	opir              *opirHandler
-	engagement        *engagementHandler
-	alert             *alertHandler
-	network           *networkHandler
-	coord             *coordinationHandler
+	decoder    *jreap.Decoder
+	trackMgr   *trackManagerHandler
+	opir       *opirHandler
+	engagement *engagementHandler
+	alert      *alertHandler
+	network    *networkHandler
+	coord      *coordinationHandler
 }
 
 // NewJREAPConsumer creates a new JREAP consumer with all typed handlers.

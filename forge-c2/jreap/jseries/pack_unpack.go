@@ -65,21 +65,21 @@ func UnpackInt24(buf []byte, bo int) int32 {
 // The value is scaled such that (min,max) maps to (0,maxValue).
 // For lat: range=180 (covers -90 to 90), maxValue=0xFFFFFF
 // For lon: range=360 (covers -180 to 180), maxValue=0xFFFFFF
-func PackFloat24(value, range_, maxValue float64) uint32 {
-	v := (value + range_/2.0) / range_ * maxValue
+func PackFloat24(value, range_, offset float64) uint32 {
+	v := (value + offset) * float64(0xFFFFFF) / range_
 	if v < 0 {
 		v = 0
 	}
-	if v > maxValue {
-		v = maxValue
+	if v > float64(0xFFFFFF) {
+		v = float64(0xFFFFFF)
 	}
 	return uint32(v)
 }
 
-// UnpackFloat24 unpacks a 24-bit float using range and maxValue.
+// UnpackFloat24 unpacks a 24-bit float using range and offset.
 // The inverse of PackFloat24.
-func UnpackFloat24(data uint32, range_, maxValue float64) float64 {
-	return float64(data)/maxValue*range_ - range_/2.0
+func UnpackFloat24(data uint32, range_, offset float64) float64 {
+	return float64(data)*range_/float64(0xFFFFFF) - offset
 }
 
 // PackScaledFloat packs a float64 into a uint16 using a linear scale.
@@ -112,23 +112,23 @@ func CRC16(data []byte) uint16 {
 // PackLatitude packs a latitude in degrees to 24-bit NIPO format.
 // Range: -90 to +90 degrees.
 func PackLatitude(lat float64) uint32 {
-	return PackFloat24(lat, 180.0, -90.0)
+	return PackFloat24(lat, 180.0, 90.0)
 }
 
 // UnpackLatitude unpacks a 24-bit latitude from NIPO format to degrees.
 func UnpackLatitude(data uint32) float64 {
-	return UnpackFloat24(data, 180.0, -90.0)
+	return UnpackFloat24(data, 180.0, 90.0)
 }
 
 // PackLongitude packs a longitude in degrees to 24-bit NIPO format.
 // Range: -180 to +180 degrees.
 func PackLongitude(lon float64) uint32 {
-	return PackFloat24(lon, 360.0, -180.0)
+	return PackFloat24(lon, 360.0, 180.0)
 }
 
 // UnpackLongitude unpacks a 24-bit longitude from NIPO format to degrees.
 func UnpackLongitude(data uint32) float64 {
-	return UnpackFloat24(data, 360.0, -180.0)
+	return UnpackFloat24(data, 360.0, 180.0)
 }
 
 // PackAltitudeNIPO packs altitude in meters to 24-bit NIPO/meters format.
@@ -309,14 +309,14 @@ func UnpackGeodeticAltitude(data uint32) (altMeters float64, unitCode uint8) {
 
 // QualityIndicator holds Link 16 track quality bits.
 type QualityIndicator struct {
-	Quality    uint8 // 0-3: track quality (low to high)
-	Jamming    bool  // jammed
-	MultiPath  bool  // multipath interference
-	Invalid    bool  // invalid track
-	Coasting   bool  // coasting (no recent update)
-	Manual     bool  // manually plotted
-	Derived    bool  // derived from correlation
-	Ambiguous  bool  // ambiguous association
+	Quality   uint8 // 0-3: track quality (low to high)
+	Jamming   bool  // jammed
+	MultiPath bool  // multipath interference
+	Invalid   bool  // invalid track
+	Coasting  bool  // coasting (no recent update)
+	Manual    bool  // manually plotted
+	Derived   bool  // derived from correlation
+	Ambiguous bool  // ambiguous association
 }
 
 // PackQuality packs quality indicator bits into a byte.
@@ -358,7 +358,7 @@ func UnpackQuality(b uint8) QualityIndicator {
 }
 
 // RoundTripFloat24 is a helper to test lat/lon packing round-trips.
-func RoundTripFloat24(lat float64, scale, offset float64) float64 {
+func RoundTripFloat24(lat, scale, offset float64) float64 {
 	packed := PackFloat24(lat, scale, offset)
 	return UnpackFloat24(packed, scale, offset)
 }

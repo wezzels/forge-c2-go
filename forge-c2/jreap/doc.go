@@ -13,11 +13,12 @@
 // as the underlying transport.
 //
 // Message Structure (JREAP-C over IP):
-//   +----------+----------+--------+----------+------------+------+
-//   | Protocol | Message  | Msg    | Reserved | J-Series   | CRC- |
-//   | Flags    | Type     | Length |          | Payload    | 16   |
-//   | (2 oct) | (1 oct)  | (4 oct)| (1 oct)  | (variable) | (2)  |
-//   +----------+----------+--------+----------+------------+------+
+//
+//	+----------+----------+--------+----------+------------+------+
+//	| Protocol | Message  | Msg    | Reserved | J-Series   | CRC- |
+//	| Flags    | Type     | Length |          | Payload    | 16   |
+//	| (2 oct) | (1 oct)  | (4 oct)| (1 oct)  | (variable) | (2)  |
+//	+----------+----------+--------+----------+------------+------+
 //
 // The J-Series payload consists of packed binary data as defined in
 // the relevant Link 16 message specifications (MIL-STD-6016 series).

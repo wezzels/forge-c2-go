@@ -7,20 +7,20 @@ import (
 // J5EngagementStatus represents a J5.0 Engagement Status message.
 // Transmitted from shooter platform back to C2BMC to report engagement outcome.
 type J5EngagementStatus struct {
-	EngagementID    uint32    // 32 bits: unique engagement identifier
-	TrackNumber     uint16    // 16 bits: track being engaged
-	WeaponSystem    uint8     // 8 bits: weapon type
-	EngagementStage uint8     // 8 bits: engagement stage
-	Priority        uint8     // 8 bits: engagement priority 1-5
-	TimeOnTarget    time.Time // 40 bits: UTC time of intercept attempt
-	TimeLaunched    time.Time // 40 bits: UTC time weapon was launched
-	TimeCompleted   time.Time // 40 bits: UTC time engagement completed
-	InterceptResult uint8     // 8 bits: outcome code
-	HitAssessment   uint8     // 8 bits: hit assessment bits
-	GroundTrack     uint8     // 8 bits: engagement location slot
-	CEPSlot         uint8     // 8 bits: CEP slot used
-	NetworkID       uint16    // 16 bits: Link 16 network ID
-	ParticipantNumber uint16  // 16 bits: shooter platform participant number
+	EngagementID      uint32    // 32 bits: unique engagement identifier
+	TrackNumber       uint16    // 16 bits: track being engaged
+	WeaponSystem      uint8     // 8 bits: weapon type
+	EngagementStage   uint8     // 8 bits: engagement stage
+	Priority          uint8     // 8 bits: engagement priority 1-5
+	TimeOnTarget      time.Time // 40 bits: UTC time of intercept attempt
+	TimeLaunched      time.Time // 40 bits: UTC time weapon was launched
+	TimeCompleted     time.Time // 40 bits: UTC time engagement completed
+	InterceptResult   uint8     // 8 bits: outcome code
+	HitAssessment     uint8     // 8 bits: hit assessment bits
+	GroundTrack       uint8     // 8 bits: engagement location slot
+	CEPSlot           uint8     // 8 bits: CEP slot used
+	NetworkID         uint16    // 16 bits: Link 16 network ID
+	ParticipantNumber uint16    // 16 bits: shooter platform participant number
 }
 
 // J5PayloadSize is the packed size of a J5 Engagement Status message.
@@ -28,7 +28,9 @@ const J5PayloadSize = 32 // 256 bits
 
 // PackJ5EngagementStatus packs a J5 Engagement Status message into buf (32 bytes).
 // Bit layout:
-//  0-31:   Engagement ID (uint32)
+//
+//	0-31:   Engagement ID (uint32)
+//
 // 32-47:   Track number (uint16)
 // 48-55:   Weapon system (uint8)
 // 56-63:   Engagement stage (uint8)
@@ -138,8 +140,8 @@ func UnpackJ5EngagementStatus(buf []byte) *J5EngagementStatus {
 
 // J5 Stage constants.
 const (
-	J5StageWeaponAssigned  = 1
-	J5StageWeaponLaunched  = 2
+	J5StageWeaponAssigned   = 1
+	J5StageWeaponLaunched   = 2
 	J5StageFlightTerminated = 3
 	J5StageInterceptSuccess = 4
 	J5StageInterceptFailed  = 5

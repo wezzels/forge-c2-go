@@ -19,7 +19,7 @@ type C2BMCInterface struct {
 	mu sync.RWMutex
 
 	// Connection state
-	connected    bool
+	connected     bool
 	lastHeartbeat time.Time
 	connectionURL string
 
@@ -50,33 +50,33 @@ type BMDSStatus struct {
 
 // EngagementOrder represents an engagement order from C2BMC
 type EngagementOrder struct {
-	OrderID         string    `json:"order_id"`
-	TrackID         string    `json:"track_id"`
-	Priority        int       `json:"priority"` // 1-5
-	WeaponSystem    string    `json:"weapon_system"` // GBI, SM-3, THAAD, PATRIOT
-	TimeOnTarget    time.Time `json:"time_on_target"`
-	InterceptProb   float64   `json:"intercept_probability"`
-	Status          string    `json:"status"` // PENDING, LAUNCHED, INTERCEPTED, FAILED, CANCELLED
-	LaunchSite      string    `json:"launch_site"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	OrderID       string    `json:"order_id"`
+	TrackID       string    `json:"track_id"`
+	Priority      int       `json:"priority"`      // 1-5
+	WeaponSystem  string    `json:"weapon_system"` // GBI, SM-3, THAAD, PATRIOT
+	TimeOnTarget  time.Time `json:"time_on_target"`
+	InterceptProb float64   `json:"intercept_probability"`
+	Status        string    `json:"status"` // PENDING, LAUNCHED, INTERCEPTED, FAILED, CANCELLED
+	LaunchSite    string    `json:"launch_site"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // BMDAlert represents a BMD-level alert
 type BMDAlert struct {
-	AlertID       string    `json:"alert_id"`
-	TrackID       string    `json:"track_id"`
-	AlertType     string    `json:"alert_type"` // LAUNCH_DETECTED, THREAT_CONFIRMED, ENGAGEMENT_ORDER, INTERCEPT_COMPLETE
-	Severity      int       `json:"severity"`    // 1-5
-	Message       string    `json:"message"`
-	Acknowledged  bool      `json:"acknowledged"`
-	CreatedAt     time.Time `json:"created_at"`
+	AlertID      string    `json:"alert_id"`
+	TrackID      string    `json:"track_id"`
+	AlertType    string    `json:"alert_type"` // LAUNCH_DETECTED, THREAT_CONFIRMED, ENGAGEMENT_ORDER, INTERCEPT_COMPLETE
+	Severity     int       `json:"severity"`   // 1-5
+	Message      string    `json:"message"`
+	Acknowledged bool      `json:"acknowledged"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // NewC2BMCInterface creates a new C2BMC interface
 func NewC2BMCInterface(connectionURL string) *C2BMCInterface {
 	return &C2BMCInterface{
-		connectionURL:  connectionURL,
+		connectionURL: connectionURL,
 		tracks:        make(map[string]*Track),
 		engagements:   make(map[string]*EngagementOrder),
 		alerts:        make(map[string]*BMDAlert),
@@ -86,7 +86,7 @@ func NewC2BMCInterface(connectionURL string) *C2BMCInterface {
 			ActiveSensors: []string{"SBIRS-GEO-1", "SBIRS-GEO-2", "UEWR-1", "TPY-2-1"},
 		},
 		engageRadius: 1000, // km
-		engageMinTL:  4,   // threat level 4 or 5
+		engageMinTL:  4,    // threat level 4 or 5
 	}
 }
 
@@ -156,12 +156,12 @@ func (c *C2BMCInterface) checkEngagement(track *Track) {
 
 	// Create alert
 	alert := &BMDAlert{
-		AlertID:      "ALERT-" + order.OrderID,
-		TrackID:      track.TrackID,
-		AlertType:    "ENGAGEMENT_ORDER",
-		Severity:     track.ThreatLevel,
-		Message:       "Engagement order created for " + track.TrackID,
-		CreatedAt:     time.Now(),
+		AlertID:   "ALERT-" + order.OrderID,
+		TrackID:   track.TrackID,
+		AlertType: "ENGAGEMENT_ORDER",
+		Severity:  track.ThreatLevel,
+		Message:   "Engagement order created for " + track.TrackID,
+		CreatedAt: time.Now(),
 	}
 	c.alerts[alert.AlertID] = alert
 
@@ -303,17 +303,17 @@ func (c *C2BMCInterface) ToJSON() ([]byte, error) {
 	defer c.mu.RUnlock()
 
 	state := struct {
-		Connected    bool               `json:"connected"`
-		BMDSStatus   *BMDSStatus        `json:"bmds_status"`
-		Tracks       map[string]*Track  `json:"tracks"`
-		Engagements  []*EngagementOrder `json:"engagements"`
-		Alerts       []*BMDAlert        `json:"alerts"`
-		Heartbeat    time.Time          `json:"heartbeat"`
+		Connected   bool               `json:"connected"`
+		BMDSStatus  *BMDSStatus        `json:"bmds_status"`
+		Tracks      map[string]*Track  `json:"tracks"`
+		Engagements []*EngagementOrder `json:"engagements"`
+		Alerts      []*BMDAlert        `json:"alerts"`
+		Heartbeat   time.Time          `json:"heartbeat"`
 	}{
-		Connected:   c.connected,
-		BMDSStatus:  c.bmdsStatus,
-		Tracks:      c.tracks,
-		Heartbeat:   c.lastHeartbeat,
+		Connected:  c.connected,
+		BMDSStatus: c.bmdsStatus,
+		Tracks:     c.tracks,
+		Heartbeat:  c.lastHeartbeat,
 	}
 
 	// Convert engagements map to slice
@@ -406,7 +406,7 @@ func (c *C2BMCInterface) InjectAlert(alert *BMDAlert) {
 func (e *EngagementOrder) GetOrderID() string         { return e.OrderID }
 func (e *EngagementOrder) GetTrackID() string         { return e.TrackID }
 func (e *EngagementOrder) GetPriority() int           { return e.Priority }
-func (e *EngagementOrder) GetWeaponSystem() string     { return e.WeaponSystem }
+func (e *EngagementOrder) GetWeaponSystem() string    { return e.WeaponSystem }
 func (e *EngagementOrder) GetTimeOnTarget() time.Time { return e.TimeOnTarget }
-func (e *EngagementOrder) GetInterceptProb() float64   { return e.InterceptProb }
-func (e *EngagementOrder) GetStatus() string           { return e.Status }
+func (e *EngagementOrder) GetInterceptProb() float64  { return e.InterceptProb }
+func (e *EngagementOrder) GetStatus() string          { return e.Status }

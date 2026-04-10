@@ -37,14 +37,14 @@ func (h *engagementHandler) HandleJ4(msg []byte) error {
 
 	eng := &EngagementOrder{
 		OrderID:       j4.OrderID,
-		TrackID:        j4.TrackID,
-		Priority:       j4.Priority,
-		WeaponSystem:   j4.WeaponSystem,
-		TimeOnTarget:   j4.TimeOnTarget,
-		InterceptProb:  j4.InterceptProb,
-		Status:         j4.Status,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		TrackID:       j4.TrackID,
+		Priority:      j4.Priority,
+		WeaponSystem:  j4.WeaponSystem,
+		TimeOnTarget:  j4.TimeOnTarget,
+		InterceptProb: j4.InterceptProb,
+		Status:        j4.Status,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 	h.c2bmc.InjectEngagement(eng)
 	return nil

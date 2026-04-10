@@ -14,12 +14,12 @@ const MaxMessageSize = 65507 // 65535 - 8 (JREAP header) - 2 (CRC)
 
 // Errors
 var (
-	ErrInvalidHeader      = errors.New("invalid JREAP header")
-	ErrInvalidFlags      = errors.New("invalid protocol flags")
-	ErrInvalidLength     = errors.New("invalid message length")
-	ErrBufferTooSmall    = errors.New("buffer too small for message")
-	ErrCRCFailed         = errors.New("CRC verification failed")
-	ErrMessageTooLarge   = errors.New("message exceeds maximum size")
+	ErrInvalidHeader   = errors.New("invalid JREAP header")
+	ErrInvalidFlags    = errors.New("invalid protocol flags")
+	ErrInvalidLength   = errors.New("invalid message length")
+	ErrBufferTooSmall  = errors.New("buffer too small for message")
+	ErrCRCFailed       = errors.New("CRC verification failed")
+	ErrMessageTooLarge = errors.New("message exceeds maximum size")
 )
 
 // Header represents the JREAP-C fixed header (8 octets)
@@ -98,8 +98,8 @@ func EncodeFull(payload []byte, messageType uint8, crc16 func([]byte) uint16) ([
 	h := Header{
 		ProtocolFlags: ProtocolJREAPC,
 		MessageType:   messageType,
-		Reserved:     0,
-		Length:       uint32(payloadLen),
+		Reserved:      0,
+		Length:        uint32(payloadLen),
 	}
 
 	if err := h.Encode(buf); err != nil {

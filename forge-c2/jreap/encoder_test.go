@@ -3,30 +3,32 @@ package jreap
 import (
 	"testing"
 	"time"
+
+	"forge-c2/jreap/jseries"
 )
 
 // mockSensorEvent implements SensorEventLike for testing.
 type mockSensorEvent struct {
-	eventID    string
-	timestamp  time.Time
-	sensorID   string
-	latitude   float64
-	longitude  float64
-	altitude   float64
-	intensity  float64
+	eventID   string
+	timestamp time.Time
+	sensorID  string
+	latitude  float64
+	longitude float64
+	altitude  float64
+	intensity float64
 }
 
-func (m *mockSensorEvent) GetEventID() string    { return m.eventID }
+func (m *mockSensorEvent) GetEventID() string      { return m.eventID }
 func (m *mockSensorEvent) GetTimestamp() time.Time { return m.timestamp }
-func (m *mockSensorEvent) GetSensorID() string   { return m.sensorID }
-func (m *mockSensorEvent) GetLatitude() float64   { return m.latitude }
-func (m *mockSensorEvent) GetLongitude() float64  { return m.longitude }
-func (m *mockSensorEvent) GetAltitude() float64   { return m.altitude }
-func (m *mockSensorEvent) GetIntensity() float64  { return m.intensity }
+func (m *mockSensorEvent) GetSensorID() string     { return m.sensorID }
+func (m *mockSensorEvent) GetLatitude() float64    { return m.latitude }
+func (m *mockSensorEvent) GetLongitude() float64   { return m.longitude }
+func (m *mockSensorEvent) GetAltitude() float64    { return m.altitude }
+func (m *mockSensorEvent) GetIntensity() float64   { return m.intensity }
 
 // mockTrack implements TrackLike for testing.
 type mockTrack struct {
-	trackNumber   uint16
+	trackNumber  uint16
 	latitude     float64
 	longitude    float64
 	altitude     float64
@@ -38,35 +40,35 @@ type mockTrack struct {
 	associations []string
 }
 
-func (m *mockTrack) GetTrackID() string       { return "TRACK-001" }
-func (m *mockTrack) GetTrackNumber() uint16     { return m.trackNumber }
-func (m *mockTrack) GetLatitude() float64       { return m.latitude }
-func (m *mockTrack) GetLongitude() float64      { return m.longitude }
-func (m *mockTrack) GetAltitude() float64       { return m.altitude }
-func (m *mockTrack) GetSpeed() float64          { return m.speed }
-func (m *mockTrack) GetHeading() float64        { return m.heading }
-func (m *mockTrack) GetThreatLevel() int         { return m.threatLevel }
-func (m *mockTrack) GetStatus() string          { return m.status }
-func (m *mockTrack) GetLastUpdate() time.Time   { return m.lastUpdate }
+func (m *mockTrack) GetTrackID() string        { return "TRACK-001" }
+func (m *mockTrack) GetTrackNumber() uint16    { return m.trackNumber }
+func (m *mockTrack) GetLatitude() float64      { return m.latitude }
+func (m *mockTrack) GetLongitude() float64     { return m.longitude }
+func (m *mockTrack) GetAltitude() float64      { return m.altitude }
+func (m *mockTrack) GetSpeed() float64         { return m.speed }
+func (m *mockTrack) GetHeading() float64       { return m.heading }
+func (m *mockTrack) GetThreatLevel() int       { return m.threatLevel }
+func (m *mockTrack) GetStatus() string         { return m.status }
+func (m *mockTrack) GetLastUpdate() time.Time  { return m.lastUpdate }
 func (m *mockTrack) GetAssociations() []string { return m.associations }
 
 // mockEngagementOrder implements EngagementOrderLike for testing.
 type mockEngagementOrder struct {
 	orderID       string
-	priority     int
-	weaponSystem string
-	timeOnTarget time.Time
+	priority      int
+	weaponSystem  string
+	timeOnTarget  time.Time
 	interceptProb float64
-	status       string
+	status        string
 }
 
-func (m *mockEngagementOrder) GetOrderID() string        { return m.orderID }
-func (m *mockEngagementOrder) GetTrackID() string        { return "TRACK-001" }
+func (m *mockEngagementOrder) GetOrderID() string         { return m.orderID }
+func (m *mockEngagementOrder) GetTrackID() string         { return "TRACK-001" }
 func (m *mockEngagementOrder) GetPriority() int           { return m.priority }
-func (m *mockEngagementOrder) GetWeaponSystem() string   { return m.weaponSystem }
+func (m *mockEngagementOrder) GetWeaponSystem() string    { return m.weaponSystem }
 func (m *mockEngagementOrder) GetTimeOnTarget() time.Time { return m.timeOnTarget }
-func (m *mockEngagementOrder) GetInterceptProb() float64 { return m.interceptProb }
-func (m *mockEngagementOrder) GetStatus() string         { return m.status }
+func (m *mockEngagementOrder) GetInterceptProb() float64  { return m.interceptProb }
+func (m *mockEngagementOrder) GetStatus() string          { return m.status }
 
 func TestEncoder_EncodeSensorEvent(t *testing.T) {
 	encoder := NewEncoder("FORGE-NODE-001", "TEST")
@@ -121,14 +123,14 @@ func TestEncoder_EncodeTrack(t *testing.T) {
 
 	track := &mockTrack{
 		trackNumber:  1234,
-		latitude:    40.7128,
-		longitude:   -74.0060,
-		altitude:    50000,
-		speed:       3000,
-		heading:     45.0,
-		threatLevel: 4,
-		status:      "ACTIVE",
-		lastUpdate:  time.Unix(1704067200, 0),
+		latitude:     40.7128,
+		longitude:    -74.0060,
+		altitude:     50000,
+		speed:        3000,
+		heading:      45.0,
+		threatLevel:  4,
+		status:       "ACTIVE",
+		lastUpdate:   time.Unix(1704067200, 0),
 		associations: []string{"SBIRS-GEO-1"},
 	}
 
@@ -163,11 +165,11 @@ func TestEncoder_EncodeEngagementOrder(t *testing.T) {
 
 	order := &mockEngagementOrder{
 		orderID:       "ENG-001",
-		priority:     5,
-		weaponSystem: "SM-3",
-		timeOnTarget: time.Unix(1704067500, 0),
+		priority:      5,
+		weaponSystem:  "SM-3",
+		timeOnTarget:  time.Unix(1704067500, 0),
 		interceptProb: 0.75,
-		status:       "PENDING",
+		status:        "PENDING",
 	}
 
 	msg, err := encoder.EncodeEngagementOrder(order, nil)
@@ -244,5 +246,134 @@ func TestCRC16(t *testing.T) {
 	data := []byte("test data")
 	if CRC16(data) != CRC16(data) {
 		t.Error("CRC16 not deterministic")
+	}
+}
+
+func TestEncodeUsing_J4(t *testing.T) {
+	encoder := NewEncoder("NODE1", "APP1")
+	
+	order := &mockEngagementOrder{
+		orderID:       "ORD-001",
+		priority:      3,
+		weaponSystem:  "SM-6",
+		timeOnTarget:  time.Now().Add(30 * time.Minute),
+		interceptProb: 0.85,
+		status:        "ACTIVE",
+	}
+	
+	buf, err := encoder.EncodeUsing(J4_EngagementOrder, order)
+	if err != nil {
+		t.Fatalf("EncodeUsing failed: %v", err)
+	}
+	if len(buf) == 0 {
+		t.Error("EncodeUsing returned empty buffer")
+	}
+	// Should have header (8) + payload (15) + crc (2) = 25 bytes
+	if len(buf) != 27 {
+		t.Errorf("Expected 25 bytes, got %d", len(buf))
+	}
+}
+
+func TestEncodeUsing_J2(t *testing.T) {
+	encoder := NewEncoder("NODE1", "APP1")
+	
+	j2 := &jseries.J2Surveillance{
+		TrackNumber:       12345,
+		ParticipantNumber: 6789,
+		TrackStatus:       0x05,
+		Latitude:          33.7512,
+		Longitude:         -117.8567,
+		Altitude:          12500,
+		Speed:             450.3,
+		Heading:           127.5,
+		CourseOverGround:  128.0,
+		RadialVelocity:    120.7,
+		SignalIntensity:   15.3,
+		Frequency:         9700000,
+		SNR:               15.2,
+		Confidence:        0.92,
+		Timestamp:         time.Now(),
+		ForceType:         2,
+		PlatformType:      311,
+		SensorID:          "RADAR-01",
+	}
+	
+	buf, err := encoder.EncodeUsing(J2_Surveillance, j2)
+	if err != nil {
+		t.Fatalf("EncodeUsing failed: %v", err)
+	}
+	if len(buf) == 0 {
+		t.Error("EncodeUsing returned empty buffer")
+	}
+	// Should have header (8) + J2 payload (40) + crc (2) = 50 bytes
+	if len(buf) != 50 {
+		t.Errorf("Expected 50 bytes, got %d", len(buf))
+	}
+}
+
+func TestEncodeUsing_UnknownType(t *testing.T) {
+	encoder := NewEncoder("NODE1", "APP1")
+	
+	_, err := encoder.EncodeUsing(J3_TrackUpdate, nil)
+	if err == nil {
+		t.Error("Expected error for unregistered type")
+	}
+}
+
+func TestEncoder_Register_Override(t *testing.T) {
+	encoder := NewEncoder("NODE1", "APP1")
+	
+	// Override J2 encoder with custom function
+	encoder.Register(J2_Surveillance, func(msg interface{}, buf []byte) {
+		// Custom encoder that just zeros the buffer
+		for i := range buf {
+			buf[i] = 0xFF
+		}
+	})
+	
+	j2 := &jseries.J2Surveillance{
+		TrackNumber:       12345,
+		Latitude:          33.7512,
+		Longitude:         -117.8567,
+	}
+	
+	buf, err := encoder.EncodeUsing(J2_Surveillance, j2)
+	if err != nil {
+		t.Fatalf("EncodeUsing failed: %v", err)
+	}
+	// All bytes should be 0xFF
+	for i, b := range buf[8:48] { // payload bytes
+		if b != 0xFF {
+			t.Errorf("Payload byte[%d] = 0x%02x, want 0xFF", i, b)
+		}
+	}
+}
+
+
+func TestEncodeUsing_J4Real(t *testing.T) {
+	encoder := NewEncoder("NODE1", "APP1")
+	
+	j4 := &jseries.J4EngagementOrder{
+		EngagementID:  12345,
+		TrackNumber:   6789,
+		Priority:      3,
+		WeaponSystem:  jseries.J4WeaponSystem(2),
+		TimeOnTarget:  time.Now().Add(30 * time.Minute),
+		InterceptProb: 0.85,
+		TrackStatus:   jseries.TrackStatus_Active,
+	}
+	
+	buf, err := encoder.EncodeUsing(J4_EngagementOrder, j4)
+	if err != nil {
+		t.Fatalf("EncodeUsing failed: %v", err)
+	}
+	// Header (8) + J4PayloadSize (17) + CRC (2) = 27
+	if len(buf) != 27 {
+		t.Errorf("Expected 27 bytes, got %d", len(buf))
+	}
+	
+	// Just verify length and no error (DecodeFull tested elsewhere)
+	if err != nil {
+		t.Fatalf("EncodeUsing returned error: %v", err)
 	}
 }

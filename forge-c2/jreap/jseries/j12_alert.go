@@ -39,26 +39,36 @@ func PackJ12Alert(a *J12Alert, buf []byte) {
 		off++
 	}
 
-	buf[off] = a.AlertType; off++
-	buf[off] = a.Severity; off++
+	buf[off] = a.AlertType
+	off++
+	buf[off] = a.Severity
+	off++
 
 	latP := PackLatitude(a.Latitude)
 	lonP := PackLongitude(a.Longitude)
-	PackUint32(latP, buf, off); off += 4
-	PackUint32(lonP, buf, off); off += 4
+	PackUint32(latP, buf, off)
+	off += 4
+	PackUint32(lonP, buf, off)
+	off += 4
 
 	altP := uint32(a.Altitude)
-	PackUint24(altP, buf, off); off += 3
+	PackUint24(altP, buf, off)
+	off += 3
 
 	speedP := PackVelocity(a.Speed)
-	PackUint16(speedP, buf, off); off += 2
+	PackUint16(speedP, buf, off)
+	off += 2
 
 	hdgP := uint16(a.Heading / 0.0057)
-	PackUint16(hdgP, buf, off); off += 2
+	PackUint16(hdgP, buf, off)
+	off += 2
 
-	PackUint16(a.TrackNumber, buf, off); off += 2
-	buf[off] = a.ThreatLevel; off++
-	buf[off] = a.Classification; off++
+	PackUint16(a.TrackNumber, buf, off)
+	off += 2
+	buf[off] = a.ThreatLevel
+	off++
+	buf[off] = a.Classification
+	off++
 
 	// Source ID: first 8 bytes, null-padded
 	for i := 0; i < 8; i++ {
@@ -71,7 +81,8 @@ func PackJ12Alert(a *J12Alert, buf []byte) {
 	}
 
 	ms := PackMilliseconds(a.Timestamp)
-	PackUint32(ms, buf, off); off += 4
+	PackUint32(ms, buf, off)
+	off += 4
 }
 
 // UnpackJ12Alert unpacks a J12 Alert message from buf.
@@ -91,26 +102,36 @@ func UnpackJ12Alert(buf []byte) *J12Alert {
 	}
 	a.AlertID = string(id)
 
-	a.AlertType = buf[off]; off++
-	a.Severity = buf[off]; off++
+	a.AlertType = buf[off]
+	off++
+	a.Severity = buf[off]
+	off++
 
-	latP := UnpackUint24(buf, off); off += 4
-	lonP := UnpackUint24(buf, off); off += 4
+	latP := UnpackUint24(buf, off)
+	off += 4
+	lonP := UnpackUint24(buf, off)
+	off += 4
 	a.Latitude = UnpackLatitude(latP)
 	a.Longitude = UnpackLongitude(lonP)
 
-	altP := UnpackUint24(buf, off); off += 3
+	altP := UnpackUint24(buf, off)
+	off += 3
 	a.Altitude = float64(altP)
 
-	speedP := UnpackUint16(buf, off); off += 2
+	speedP := UnpackUint16(buf, off)
+	off += 2
 	a.Speed = UnpackVelocity(speedP)
 
-	hdgP := UnpackUint16(buf, off); off += 2
+	hdgP := UnpackUint16(buf, off)
+	off += 2
 	a.Heading = float64(hdgP) * 0.0057
 
-	a.TrackNumber = UnpackUint16(buf, off); off += 2
-	a.ThreatLevel = buf[off]; off++
-	a.Classification = buf[off]; off++
+	a.TrackNumber = UnpackUint16(buf, off)
+	off += 2
+	a.ThreatLevel = buf[off]
+	off++
+	a.Classification = buf[off]
+	off++
 
 	src := make([]byte, 0, 8)
 	for i := 0; i < 8; i++ {
@@ -141,6 +162,6 @@ const (
 	J12SeverityLow      = 1
 	J12SeverityMedium   = 2
 	J12SeverityHigh     = 3
-	J12SeverityCritical  = 4
-	J12SeverityExtreme   = 5
+	J12SeverityCritical = 4
+	J12SeverityExtreme  = 5
 )

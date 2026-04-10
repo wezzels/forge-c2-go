@@ -26,14 +26,14 @@ func TestJREAPE2E(t *testing.T) {
 	// --- Test 1: J3 Track Update round-trip ---
 	t.Run("J3TrackUpdate_RoundTrip", func(t *testing.T) {
 		original := &Track{
-			TrackID:    "TRK-0042",
+			TrackID:     "TRK-0042",
 			TrackNumber: 42,
-			Status:     "ACTIVE",
-			Latitude:   34.0522,
-			Longitude: -118.2437,
-			Altitude:  15000,
-			Speed:     2500,
-			Heading:   45.0,
+			Status:      "ACTIVE",
+			Latitude:    34.0522,
+			Longitude:   -118.2437,
+			Altitude:    15000,
+			Speed:       2500,
+			Heading:     45.0,
 			ThreatLevel: 4,
 		}
 
@@ -73,14 +73,14 @@ func TestJREAPE2E(t *testing.T) {
 	t.Run("JREAPConsumer_J3_CreatesTrack", func(t *testing.T) {
 		encoder := jreap.NewEncoder("FORGE-NODE-0001", "TEST")
 		track := &Track{
-			TrackID:    "TRK-0099",
+			TrackID:     "TRK-0099",
 			TrackNumber: 99,
-			Status:     "NEW",
-			Latitude:   40.7128,
-			Longitude: -74.0060,
-			Altitude:  30000,
-			Speed:     3000,
-			Heading:   90.0,
+			Status:      "NEW",
+			Latitude:    40.7128,
+			Longitude:   -74.0060,
+			Altitude:    30000,
+			Speed:       3000,
+			Heading:     90.0,
 			ThreatLevel: 3,
 		}
 		trackMsg, _ := encoder.EncodeTrack(track, nil)
@@ -104,22 +104,22 @@ func TestJREAPE2E(t *testing.T) {
 		j2 := &jseries.J2Surveillance{
 			TrackNumber:       77,
 			ParticipantNumber: 5,
-			TrackStatus:      1,
-			Latitude:         36.0,
-			Longitude:       -115.5,
-			Altitude:        25000,
-			Speed:           500.0,
-			Heading:         180.0,
-			CourseOverGround: 180.0,
-			RadialVelocity:  0.0,
-			SignalIntensity: 12.5,
-			Frequency:      1.0e9,
-			SNR:            0.85,
-			Confidence:     0.95,
-			Timestamp:      time.Now(),
-			ForceType:      3,
-			PlatformType:   256,
-			SensorID:       "SN-001",
+			TrackStatus:       1,
+			Latitude:          36.0,
+			Longitude:         -115.5,
+			Altitude:          25000,
+			Speed:             500.0,
+			Heading:           180.0,
+			CourseOverGround:  180.0,
+			RadialVelocity:    0.0,
+			SignalIntensity:   12.5,
+			Frequency:         1.0e9,
+			SNR:               0.85,
+			Confidence:        0.95,
+			Timestamp:         time.Now(),
+			ForceType:         3,
+			PlatformType:      256,
+			SensorID:          "SN-001",
 		}
 		encoder := jreap.NewEncoder("FORGE-NODE-0001", "TEST")
 		j2Msg, _ := encoder.EncodeJ2(j2)
@@ -133,9 +133,9 @@ func TestJREAPE2E(t *testing.T) {
 	// --- Test 4: J28 Space Track ---
 	t.Run("JREAPConsumer_J28_SpaceTrack", func(t *testing.T) {
 		j28 := &jseries.J28SpaceTrack{
-			TrackNumber:     201,
-			Time:            time.Now(),
-			Latitude:        36.8441,
+			TrackNumber:    201,
+			Time:           time.Now(),
+			Latitude:       36.8441,
 			Longitude:      -121.2869,
 			Altitude:       400000,
 			VelocityX:      7600.0,
@@ -143,20 +143,20 @@ func TestJREAPE2E(t *testing.T) {
 			VelocityZ:      0.0,
 			SatelliteID:    "USA-289",
 			OrbitalPeriod:  92.5,
-			Inclination:   97.6,
-			SemiMajorAxis: 6878.0,
-			Eccentricity:  0.0003,
+			Inclination:    97.6,
+			SemiMajorAxis:  6878.0,
+			Eccentricity:   0.0003,
 			RightAscension: 200.0,
-			ArgPerigee:    45.0,
-			TrueAnomaly:   135.0,
-			IRIntensity:   280.0,
+			ArgPerigee:     45.0,
+			TrueAnomaly:    135.0,
+			IRIntensity:    280.0,
 			BackgroundTemp: 3.0,
-			DetectionConf: 0.92,
-			SNR:           15.0,
-			Quality:       jseries.QualityIndicator{Quality: 2},
-			ThreatLevel:   2,
-			Status:        2,
-			PlatformType:  1,
+			DetectionConf:  0.92,
+			SNR:            15.0,
+			Quality:        jseries.QualityIndicator{Quality: 2},
+			ThreatLevel:    2,
+			Status:         2,
+			PlatformType:   1,
 		}
 		encoder := jreap.NewEncoder("FORGE-NODE-0001", "TEST")
 		j28Msg, _ := encoder.EncodeJ28(j28)
@@ -178,10 +178,10 @@ func TestJREAPE2E(t *testing.T) {
 			EngagementID:  12345,
 			TrackNumber:   42,
 			Priority:      3,
-			WeaponSystem: jseries.J4WeaponSystem_GMD,
-			TimeOnTarget: time.Now().Add(60 * time.Second),
+			WeaponSystem:  jseries.J4WeaponSystem_GMD,
+			TimeOnTarget:  time.Now().Add(60 * time.Second),
 			InterceptProb: 0.87,
-			TrackStatus: jseries.TrackStatus_Active,
+			TrackStatus:   jseries.TrackStatus_Active,
 		}
 		encoder := jreap.NewEncoder("FORGE-NODE-0001", "TEST")
 		j4Msg, _ := encoder.EncodeJ4(j4)
@@ -195,19 +195,19 @@ func TestJREAPE2E(t *testing.T) {
 	// --- Test 6: J12 Alert ---
 	t.Run("JREAPConsumer_J12_Alert", func(t *testing.T) {
 		j12 := &jseries.J12Alert{
-			AlertID:     "ALT-001",
-			AlertType: 1,
-			Severity:   4,
-			Latitude:   36.0,
-			Longitude: -115.5,
-			Altitude:   0,
-			Speed:     0,
-			Heading:   0,
-			TrackNumber: 42,
-			ThreatLevel: 3,
+			AlertID:        "ALT-001",
+			AlertType:      1,
+			Severity:       4,
+			Latitude:       36.0,
+			Longitude:      -115.5,
+			Altitude:       0,
+			Speed:          0,
+			Heading:        0,
+			TrackNumber:    42,
+			ThreatLevel:    3,
 			Classification: 2,
-			SourceID:  "SN-ID-001",
-			Timestamp: time.Now(),
+			SourceID:       "SN-ID-001",
+			Timestamp:      time.Now(),
 		}
 		encoder := jreap.NewEncoder("FORGE-NODE-0001", "TEST")
 		j12Msg, _ := encoder.EncodeJ12(j12)
@@ -226,19 +226,19 @@ func TestJREAPE2E(t *testing.T) {
 	// --- Test 7: J5 Engagement Status ---
 	t.Run("JREAPConsumer_J5_EngagementStatus", func(t *testing.T) {
 		j5 := &jseries.J5EngagementStatus{
-			EngagementID:    12345,
-			TrackNumber:    42,
-			WeaponSystem:   1,
-			EngagementStage: 2,
-			Priority:       3,
-			TimeOnTarget:   time.Now(),
-			TimeLaunched:   time.Now(),
-			TimeCompleted:  time.Now(),
-			InterceptResult: 1,
-			HitAssessment:  0,
-			GroundTrack:   0,
-			CEPSlot:       0,
-			NetworkID:     256,
+			EngagementID:      12345,
+			TrackNumber:       42,
+			WeaponSystem:      1,
+			EngagementStage:   2,
+			Priority:          3,
+			TimeOnTarget:      time.Now(),
+			TimeLaunched:      time.Now(),
+			TimeCompleted:     time.Now(),
+			InterceptResult:   1,
+			HitAssessment:     0,
+			GroundTrack:       0,
+			CEPSlot:           0,
+			NetworkID:         256,
 			ParticipantNumber: 10,
 		}
 		encoder := jreap.NewEncoder("FORGE-NODE-0001", "TEST")
@@ -431,10 +431,10 @@ type testSensorEvent struct {
 	intensity float64
 }
 
-func (e *testSensorEvent) GetEventID() string     { return e.id }
+func (e *testSensorEvent) GetEventID() string      { return e.id }
 func (e *testSensorEvent) GetTimestamp() time.Time { return e.ts }
-func (e *testSensorEvent) GetSensorID() string    { return e.sensorID }
-func (e *testSensorEvent) GetLatitude() float64   { return e.lat }
-func (e *testSensorEvent) GetLongitude() float64  { return e.lon }
-func (e *testSensorEvent) GetAltitude() float64   { return e.alt }
-func (e *testSensorEvent) GetIntensity() float64  { return e.intensity }
+func (e *testSensorEvent) GetSensorID() string     { return e.sensorID }
+func (e *testSensorEvent) GetLatitude() float64    { return e.lat }
+func (e *testSensorEvent) GetLongitude() float64   { return e.lon }
+func (e *testSensorEvent) GetAltitude() float64    { return e.alt }
+func (e *testSensorEvent) GetIntensity() float64   { return e.intensity }

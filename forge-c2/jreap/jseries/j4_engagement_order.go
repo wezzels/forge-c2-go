@@ -7,13 +7,13 @@ import (
 // J4EngagementOrder represents a J4.0 Engagement Order message.
 // This is transmitted from C2BMC to weapon systems to initiate engagements.
 type J4EngagementOrder struct {
-	EngagementID  uint32        // 32 bits: unique engagement ID
-	TrackNumber   uint16        // 16 bits: track being engaged
-	Priority      uint8         // 8 bits: 1=highest
+	EngagementID  uint32         // 32 bits: unique engagement ID
+	TrackNumber   uint16         // 16 bits: track being engaged
+	Priority      uint8          // 8 bits: 1=highest
 	WeaponSystem  J4WeaponSystem // 8 bits
-	TimeOnTarget  time.Time     // 40 bits: milliseconds since epoch
-	InterceptProb float64       // 0-1 intercept probability (packed as uint16 * 10000)
-	TrackStatus   TrackStatus   // 8 bits
+	TimeOnTarget  time.Time      // 40 bits: milliseconds since epoch
+	InterceptProb float64        // 0-1 intercept probability (packed as uint16 * 10000)
+	TrackStatus   TrackStatus    // 8 bits
 }
 
 // TrackStatus represents the status of a track in the BMD system.
@@ -33,7 +33,7 @@ const (
 	J4WeaponSystem_GMD     J4WeaponSystem = 1 // Ground-based Midcourse Defense
 	J4WeaponSystem_Aegis   J4WeaponSystem = 2 // Aegis Ballistic Missile Defense
 	J4WeaponSystem_THAAD   J4WeaponSystem = 3 // Terminal High Altitude Area Defense
-	J4WeaponSystem_Patriot  J4WeaponSystem = 4 // Patriot Defense System
+	J4WeaponSystem_Patriot J4WeaponSystem = 4 // Patriot Defense System
 )
 
 // J4PayloadSize is the packed byte size of a J4 Engagement Order message.
@@ -41,7 +41,9 @@ const J4PayloadSize = 17 // ceil(136 bits / 8)
 
 // PackJ4EngagementOrder packs a J4 Engagement Order message into buf (17 bytes).
 // Bit layout:
-//  0-31:   Engagement ID (uint32)
+//
+//	0-31:   Engagement ID (uint32)
+//
 // 32-47:   Track number (uint16)
 // 48-55:   Priority (uint8)
 // 56-63:   Weapon system (uint8)
@@ -122,11 +124,11 @@ func UnpackJ4EngagementOrder(buf []byte) *J4EngagementOrder {
 
 	return &J4EngagementOrder{
 		EngagementID:  engID,
-		TrackNumber:  trackNum,
-		Priority:    priority,
-		WeaponSystem: weapon,
-		TimeOnTarget: tot,
-		TrackStatus: status,
+		TrackNumber:   trackNum,
+		Priority:      priority,
+		WeaponSystem:  weapon,
+		TimeOnTarget:  tot,
+		TrackStatus:   status,
 		InterceptProb: prob,
 	}
 }

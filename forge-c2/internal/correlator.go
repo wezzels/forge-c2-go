@@ -19,7 +19,7 @@ type TrackCorrelator struct {
 	nextTrackNum uint16
 
 	// Correlation parameters
-	GateDistance   float64 // km - association gate radius
+	GateDistance  float64 // km - association gate radius
 	MaxTrackAge   time.Duration
 	MinConfidence float64
 	MaxSpeed      float64 // m/s - max realistic target speed
@@ -33,11 +33,11 @@ func NewTrackCorrelator() *TrackCorrelator {
 	return &TrackCorrelator{
 		tracks:        make(map[string]*Track),
 		nextTrackNum:  1,
-		GateDistance:  50.0,  // 50km association gate
+		GateDistance:  50.0, // 50km association gate
 		MaxTrackAge:   30 * time.Second,
 		MinConfidence: 0.3,
 		MaxSpeed:      15000, // ~Mach 44 for hypersonics
-		associations: make(map[string][]string),
+		associations:  make(map[string][]string),
 	}
 }
 

@@ -32,13 +32,13 @@ func (h *alertHandler) HandleJ12(msg []byte) error {
 		j12.AlertID, j12.AlertType, j12.Severity, j12.Latitude, j12.Longitude)
 
 	alert := &BMDAlert{
-		AlertID:     j12.AlertID,
-		TrackID:     fmt.Sprintf("TRK-%04d", j12.TrackNumber),
-		AlertType:   h.alertTypeString(j12.AlertType),
-		Severity:    int(j12.Severity),
-		Message:     fmt.Sprintf("J12 Alert: %s from %s", h.alertTypeString(j12.AlertType), j12.SourceID),
+		AlertID:      j12.AlertID,
+		TrackID:      fmt.Sprintf("TRK-%04d", j12.TrackNumber),
+		AlertType:    h.alertTypeString(j12.AlertType),
+		Severity:     int(j12.Severity),
+		Message:      fmt.Sprintf("J12 Alert: %s from %s", h.alertTypeString(j12.AlertType), j12.SourceID),
 		Acknowledged: false,
-		CreatedAt:   j12.Timestamp,
+		CreatedAt:    j12.Timestamp,
 	}
 	h.c2bmc.InjectAlert(alert)
 	return nil

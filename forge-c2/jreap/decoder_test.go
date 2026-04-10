@@ -57,14 +57,14 @@ func TestDecoder_DecodeTrackUpdate(t *testing.T) {
 
 	track := &mockTrack{
 		trackNumber: 5678,
-		latitude:   51.5074,
-		longitude:  -0.1278,
-		altitude:   200000,
-		speed:      4500,
-		heading:    90.5,
+		latitude:    51.5074,
+		longitude:   -0.1278,
+		altitude:    200000,
+		speed:       4500,
+		heading:     90.5,
 		threatLevel: 3,
-		status:     "ACTIVE",
-		lastUpdate: time.Unix(1704067200, 0),
+		status:      "ACTIVE",
+		lastUpdate:  time.Unix(1704067200, 0),
 	}
 
 	// Encode
@@ -109,11 +109,11 @@ func TestDecoder_DecodeEngagementOrder(t *testing.T) {
 
 	order := &mockEngagementOrder{
 		orderID:       "ENG-THREAT-001",
-		priority:     5,
-		weaponSystem: "GBI",
-		timeOnTarget: time.Unix(1704067500, 0),
+		priority:      5,
+		weaponSystem:  "GBI",
+		timeOnTarget:  time.Unix(1704067500, 0),
 		interceptProb: 0.65,
-		status:       "PENDING",
+		status:        "PENDING",
 	}
 
 	// Encode
@@ -159,14 +159,14 @@ func TestDecoder_DecodeWrongType(t *testing.T) {
 	// Create a track message
 	track := &mockTrack{
 		trackNumber: 1234,
-		latitude:   40.0,
-		longitude:  -75.0,
-		altitude:   50000,
-		speed:      3000,
-		heading:    45.0,
+		latitude:    40.0,
+		longitude:   -75.0,
+		altitude:    50000,
+		speed:       3000,
+		heading:     45.0,
 		threatLevel: 4,
-		status:     "ACTIVE",
-		lastUpdate: time.Now(),
+		status:      "ACTIVE",
+		lastUpdate:  time.Now(),
 	}
 
 	msg, err := encoder.EncodeTrack(track, nil)

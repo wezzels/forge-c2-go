@@ -1,6 +1,7 @@
 package jreap
 
 import (
+	"fmt"
 	"time"
 
 	"forge-c2/jreap/jseries"
@@ -10,7 +11,7 @@ import (
 // EncodedMessage holds JREAP-encoded bytes plus associated metadata
 // that doesn't fit in the JREAP header (CorrelationID, Classification).
 type EncodedMessage struct {
-	Bytes   []byte
+	Bytes    []byte
 	Metadata *mdpa.MDPAMetadata
 }
 
@@ -55,13 +56,169 @@ type EngagementOrderLike interface {
 type Encoder struct {
 	nodeID        string
 	applicationID string
+	// registry maps MessageType → encodeFn for data-driven encoding
+	registry map[MessageType]encodeFn
 }
+
+// encodeFn is a function that encodes a specific J-series message type.
+type encodeFn func(interface{}, []byte) // (struct, buf)
 
 // NewEncoder creates a new JREAP encoder.
 func NewEncoder(nodeID, appID string) *Encoder {
-	return &Encoder{
+	e := &Encoder{
 		nodeID:        nodeID,
 		applicationID: appID,
+		registry:      make(map[MessageType]encodeFn),
+	}
+	e.registerDefaults()
+	return e
+}
+
+// Register adds an encoder function for a message type.
+// This allows custom encoders to be registered at runtime.
+func (e *Encoder) Register(msgType MessageType, fn encodeFn) {
+	e.registry[msgType] = fn
+}
+
+// EncodeUsing encodes a message using the registered encoder for its type.
+// Returns error if no encoder is registered for this message type.
+func (e *Encoder) EncodeUsing(msgType MessageType, msg interface{}) ([]byte, error) {
+	fn, ok := e.registry[msgType]
+	if !ok {
+		return nil, fmt.Errorf("no encoder registered for message type %s", msgType)
+	}
+
+	// Get payload size from registry
+	size := msgType.PayloadSize()
+	if size == 0 {
+		return nil, fmt.Errorf("unknown payload size for message type %s", msgType)
+	}
+
+	buf := make([]byte, size)
+	fn(msg, buf)
+	return EncodeFull(buf, uint8(msgType), CRC16)
+}
+
+// registerDefaults registers all built-in J-series encoders.
+func (e *Encoder) registerDefaults() {
+	// J0-J31 encoders (straight pack + EncodeFull)
+	e.registry[J0_TrackManagement] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J0TrackManagement); ok {
+			jseries.PackJ0TrackManagement(m, buf)
+		}
+	}
+	e.registry[J1_NetworkInitialize] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J1NetworkInit); ok {
+			jseries.PackJ1NetworkInit(m, buf)
+		}
+	}
+	e.registry[J2_Surveillance] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J2Surveillance); ok {
+			jseries.PackJ2Surveillance(m, buf)
+		}
+	}
+	e.registry[J4_EngagementOrder] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J4EngagementOrder); ok {
+			jseries.PackJ4EngagementOrder(m, buf)
+		}
+	}
+	e.registry[J5_EngagementStatus] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J5EngagementStatus); ok {
+			jseries.PackJ5EngagementStatus(m, buf)
+		}
+	}
+	e.registry[J6_SensorRegistration] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J6SensorRegistration); ok {
+			jseries.PackJ6SensorRegistration(m, buf)
+		}
+	}
+	e.registry[J7_Platform] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J7PlatformData); ok {
+			jseries.PackJ7PlatformData(m, buf)
+		}
+	}
+	e.registry[J8_Radio] = func(msg interface{}, buf []byte) {
+		// J8 has variable length - handled separately
+	}
+	e.registry[J9_ElectronicAttack] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J9ElectronicAttack); ok {
+			jseries.PackJ9ElectronicAttack(m, buf)
+		}
+	}
+	e.registry[J10_Offset] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J10Offset); ok {
+			jseries.PackJ10Offset(m, buf)
+		}
+	}
+	e.registry[J11_DataTransfer] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J11DataTransfer); ok {
+			jseries.PackJ11DataTransfer(m, buf)
+		}
+	}
+	e.registry[J12_Alert] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J12Alert); ok {
+			jseries.PackJ12Alert(m, buf)
+		}
+	}
+	e.registry[J13_PreciseParticipant] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J13PrecisionParticipant); ok {
+			jseries.PackJ13PrecisionParticipant(m, buf)
+		}
+	}
+	e.registry[J14_ProcessSpec] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J14ProcessSpec); ok {
+			jseries.PackJ14ProcessSpec(m, buf)
+		}
+	}
+	e.registry[J15_Command] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J15Command); ok {
+			jseries.PackJ15Command(m, buf)
+		}
+	}
+	e.registry[J16_Acknowledge] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J16Acknowledge); ok {
+			jseries.PackJ16Acknowledge(m, buf)
+		}
+	}
+	e.registry[J17_InitiateTransfer] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J17InitiateTransfer); ok {
+			jseries.PackJ17InitiateTransfer(m, buf)
+		}
+	}
+	e.registry[J18_SpaceTrack] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J18SpaceTrack); ok {
+			jseries.PackJ18SpaceTrack(m, buf)
+		}
+	}
+	e.registry[J26_Test] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J26Test); ok {
+			jseries.PackJ26Test(m, buf)
+		}
+	}
+	e.registry[J27_Time] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J27Time); ok {
+			jseries.PackJ27Time(m, buf)
+		}
+	}
+	e.registry[J28_SatelliteOPIR] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J28SpaceTrack); ok {
+			jseries.PackJ28SpaceTrack(m, buf)
+		}
+	}
+	e.registry[J29_Symbology] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J29Symbology); ok {
+			jseries.PackJ29Symbology(m, buf)
+		}
+	}
+	e.registry[J30_IFF] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J30IFF); ok {
+			jseries.PackJ30IFF(m, buf)
+		}
+	}
+	e.registry[J31_FileTransfer] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J31FileTransfer); ok {
+			jseries.PackJ31FileTransfer(m, buf)
+		}
 	}
 }
 
@@ -354,7 +511,7 @@ func (e *Encoder) packOPIRMessage(event SensorEventLike, meta *mdpa.MDPAMetadata
 		conf = 255
 	}
 	buf[off] = conf
-off++
+	off++
 
 	// SNR (from event intensity as proxy)
 	snr := uint8(event.GetIntensity() / 5.0)
@@ -362,7 +519,7 @@ off++
 		snr = 255
 	}
 	buf[off] = snr
-off++
+	off++
 
 	// Quality from metadata
 	quality := e.metadataToQuality(meta)
@@ -371,11 +528,11 @@ off++
 
 	// Threat level (from sensor type heuristic)
 	buf[off] = 0
-off++
+	off++
 
 	// Status (NEW for raw detection)
 	buf[off] = 1
-off++
+	off++
 
 	// Platform type (SATELLITE for OPIR)
 	buf[off] = 1

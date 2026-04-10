@@ -18,13 +18,13 @@ import (
 
 // Config holds FORGE-C2 server configuration
 type Config struct {
-	Port            string
-	VIMIBroker      string
-	KafkaBroker     string
+	Port           string
+	VIMIBroker     string
+	KafkaBroker    string
 	C2BMCURL       string
-	AllowedOrigins  []string
-	JREAPUDP        string // JREAP UDP listen address (e.g. ":5000")
-	JREAPTCP        string // JREAP TCP listen address (e.g. ":5001")
+	AllowedOrigins []string
+	JREAPUDP       string // JREAP UDP listen address (e.g. ":5000")
+	JREAPTCP       string // JREAP TCP listen address (e.g. ":5001")
 }
 
 // Server is the main HTTP/WebSocket server
@@ -90,13 +90,13 @@ func (ts *TrackStore) GetAllTracks() []*Track {
 // NewServer creates a new FORGE-C2 server
 func NewServer(cfg *Config) (*Server, error) {
 	s := &Server{
-		config:        cfg,
-		router:        mux.NewRouter(),
-		trackStore:    NewTrackStore(),
-		correlator:    NewTrackCorrelator(),
-		kafka:         NewKafkaBroker([]string{cfg.KafkaBroker}),
-		c2bmc:         NewC2BMCInterface(cfg.C2BMCURL),
-		clients:       make(map[*websocket.Conn]bool),
+		config:     cfg,
+		router:     mux.NewRouter(),
+		trackStore: NewTrackStore(),
+		correlator: NewTrackCorrelator(),
+		kafka:      NewKafkaBroker([]string{cfg.KafkaBroker}),
+		c2bmc:      NewC2BMCInterface(cfg.C2BMCURL),
+		clients:    make(map[*websocket.Conn]bool),
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true // TODO: restrict in production
@@ -250,7 +250,7 @@ func (s *Server) broadcastTrackUpdate(track *Track, isNew bool) {
 // broadcastTrackDropped notifies clients of track deletion
 func (s *Server) broadcastTrackDropped(trackID string) {
 	msg := map[string]interface{}{
-		"type":    "track_dropped",
+		"type":     "track_dropped",
 		"track_id": trackID,
 	}
 
@@ -313,13 +313,13 @@ func (s *Server) handleCreateTrack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.correlator.ProcessEvent(&SensorEvent{
-		EventID:   fmt.Sprintf("MANUAL-%d", time.Now().Unix()),
-		Timestamp: time.Now(),
-		SensorID:  "MANUAL",
+		EventID:    fmt.Sprintf("MANUAL-%d", time.Now().Unix()),
+		Timestamp:  time.Now(),
+		SensorID:   "MANUAL",
 		SensorType: "MANUAL",
-		Latitude:  track.Latitude,
-		Longitude: track.Longitude,
-		Altitude:  track.Altitude,
+		Latitude:   track.Latitude,
+		Longitude:  track.Longitude,
+		Altitude:   track.Altitude,
 	})
 
 	json.NewEncoder(w).Encode(map[string]string{"status": "created"})
@@ -366,8 +366,8 @@ func (s *Server) handleInjectSensor(w http.ResponseWriter, r *http.Request) {
 	s.c2bmc.UpdateTrack(track)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"track":   track,
-		"is_new":  isNew,
+		"track":    track,
+		"is_new":   isNew,
 		"consumed": true,
 	})
 }

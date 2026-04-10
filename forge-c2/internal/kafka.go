@@ -15,15 +15,15 @@ import (
 
 // KafkaBroker holds the connection to Kafka
 type KafkaBroker struct {
-	brokers []string
-	writer  *kafka.Writer
+	brokers      []string
+	writer       *kafka.Writer
 	jreapEncoder *jreap.Encoder
 }
 
 // NewKafkaBroker creates a new Kafka connection
 func NewKafkaBroker(brokers []string) *KafkaBroker {
 	return &KafkaBroker{
-		brokers: brokers,
+		brokers:      brokers,
 		jreapEncoder: jreap.NewEncoder("FORGE-NODE-0001", "KAFKA-INGEST"),
 	}
 }
@@ -37,35 +37,35 @@ type SensorEvent struct {
 	Latitude   float64   `json:"latitude"`
 	Longitude  float64   `json:"longitude"`
 	Altitude   float64   `json:"altitude"` // meters
-	Azimuth    float64   `json:"azimuth"` // degrees
+	Azimuth    float64   `json:"azimuth"`  // degrees
 	Elevation  float64   `json:"elevation"`
 	SignalType string    `json:"signal_type"` // IR, RF, SEISMIC, ACOUSTIC
 	Intensity  float64   `json:"intensity"`   // dB or magnitude
 	Frequency  float64   `json:"frequency"`   // Hz for RF
 	SNR        float64   `json:"snr"`         // signal-to-noise ratio
-	Confidence float64   `json:"confidence"`   // 0-1
+	Confidence float64   `json:"confidence"`  // 0-1
 }
 
 // Track represents a correlated track
 type Track struct {
-	TrackID       string     `json:"track_id"`
-	TrackNumber   uint16     `json:"track_number"`
-	Status        string     `json:"status"` // NEW, ACTIVE, UPDATED, DROPPED
-	Latitude      float64    `json:"latitude"`   // degrees
-	Longitude     float64    `json:"longitude"`  // degrees
-	Altitude      float64    `json:"altitude"`    // meters
-	Speed         float64    `json:"speed"`       // m/s
-	Heading       float64    `json:"heading"`     // degrees
-	ThreatLevel   int        `json:"threat_level"` // 1-5
-	TrackSource   string     `json:"track_source"` // OPIR, RADAR, FUSED
-	PlatformType  string     `json:"platform_type"`
-	ForceType     string     `json:"force_type"` // FRIEND, HOSTILE, NEUTRAL, UNKNOWN
-	LastUpdate    time.Time  `json:"last_update"`
-	Associations  []string   `json:"associations"` // sensor IDs
-	Trajectory    []Position `json:"trajectory"`    // recent positions
+	TrackID      string     `json:"track_id"`
+	TrackNumber  uint16     `json:"track_number"`
+	Status       string     `json:"status"`       // NEW, ACTIVE, UPDATED, DROPPED
+	Latitude     float64    `json:"latitude"`     // degrees
+	Longitude    float64    `json:"longitude"`    // degrees
+	Altitude     float64    `json:"altitude"`     // meters
+	Speed        float64    `json:"speed"`        // m/s
+	Heading      float64    `json:"heading"`      // degrees
+	ThreatLevel  int        `json:"threat_level"` // 1-5
+	TrackSource  string     `json:"track_source"` // OPIR, RADAR, FUSED
+	PlatformType string     `json:"platform_type"`
+	ForceType    string     `json:"force_type"` // FRIEND, HOSTILE, NEUTRAL, UNKNOWN
+	LastUpdate   time.Time  `json:"last_update"`
+	Associations []string   `json:"associations"` // sensor IDs
+	Trajectory   []Position `json:"trajectory"`   // recent positions
 	// MDPAF fields
-	QualityFlags  uint8      `json:"quality_flags"` // MDPAMetadata quality bitfield
-	CorrelationID string     `json:"correlation_id"` // End-to-end tracking ID
+	QualityFlags  uint8  `json:"quality_flags"`  // MDPAMetadata quality bitfield
+	CorrelationID string `json:"correlation_id"` // End-to-end tracking ID
 }
 
 // Position for trajectory history
@@ -173,23 +173,23 @@ func GenerateCorrelationID(satID string, trackNum uint16, t time.Time) string {
 }
 
 // --- SensorEvent getters for jreap.SensorEventLike ---
-func (e *SensorEvent) GetEventID() string    { return e.EventID }
+func (e *SensorEvent) GetEventID() string      { return e.EventID }
 func (e *SensorEvent) GetTimestamp() time.Time { return e.Timestamp }
-func (e *SensorEvent) GetSensorID() string   { return e.SensorID }
-func (e *SensorEvent) GetLatitude() float64  { return e.Latitude }
-func (e *SensorEvent) GetLongitude() float64 { return e.Longitude }
-func (e *SensorEvent) GetAltitude() float64  { return e.Altitude }
-func (e *SensorEvent) GetIntensity() float64 { return e.Intensity }
+func (e *SensorEvent) GetSensorID() string     { return e.SensorID }
+func (e *SensorEvent) GetLatitude() float64    { return e.Latitude }
+func (e *SensorEvent) GetLongitude() float64   { return e.Longitude }
+func (e *SensorEvent) GetAltitude() float64    { return e.Altitude }
+func (e *SensorEvent) GetIntensity() float64   { return e.Intensity }
 
 // --- Track getters for jreap.TrackLike ---
-func (t *Track) GetTrackID() string     { return t.TrackID }
-func (t *Track) GetTrackNumber() uint16 { return t.TrackNumber }
-func (t *Track) GetLatitude() float64   { return t.Latitude }
-func (t *Track) GetLongitude() float64  { return t.Longitude }
-func (t *Track) GetAltitude() float64   { return t.Altitude }
-func (t *Track) GetSpeed() float64      { return t.Speed }
-func (t *Track) GetHeading() float64    { return t.Heading }
-func (t *Track) GetThreatLevel() int    { return t.ThreatLevel }
-func (t *Track) GetStatus() string       { return t.Status }
-func (t *Track) GetLastUpdate() time.Time { return t.LastUpdate }
+func (t *Track) GetTrackID() string        { return t.TrackID }
+func (t *Track) GetTrackNumber() uint16    { return t.TrackNumber }
+func (t *Track) GetLatitude() float64      { return t.Latitude }
+func (t *Track) GetLongitude() float64     { return t.Longitude }
+func (t *Track) GetAltitude() float64      { return t.Altitude }
+func (t *Track) GetSpeed() float64         { return t.Speed }
+func (t *Track) GetHeading() float64       { return t.Heading }
+func (t *Track) GetThreatLevel() int       { return t.ThreatLevel }
+func (t *Track) GetStatus() string         { return t.Status }
+func (t *Track) GetLastUpdate() time.Time  { return t.LastUpdate }
 func (t *Track) GetAssociations() []string { return t.Associations }

@@ -16,8 +16,8 @@ func TestHeader_EncodeDecode(t *testing.T) {
 			hdr: Header{
 				ProtocolFlags: ProtocolJREAPC,
 				MessageType:   3,
-				Reserved:     0,
-				Length:       21,
+				Reserved:      0,
+				Length:        21,
 			},
 			wantBuf: []byte{0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x15},
 		},
@@ -26,8 +26,8 @@ func TestHeader_EncodeDecode(t *testing.T) {
 			hdr: Header{
 				ProtocolFlags: ProtocolJREAPC,
 				MessageType:   4,
-				Reserved:     0,
-				Length:       15,
+				Reserved:      0,
+				Length:        15,
 			},
 			wantBuf: []byte{0x00, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x0F},
 		},
@@ -36,8 +36,8 @@ func TestHeader_EncodeDecode(t *testing.T) {
 			hdr: Header{
 				ProtocolFlags: ProtocolJREAPC,
 				MessageType:   28,
-				Reserved:     0,
-				Length:       17,
+				Reserved:      0,
+				Length:        17,
 			},
 			wantBuf: []byte{0x00, 0x01, 0x1C, 0x00, 0x00, 0x00, 0x00, 0x11},
 		},
@@ -79,7 +79,7 @@ func TestHeader_Encode_BufferTooSmall(t *testing.T) {
 	hdr := Header{
 		ProtocolFlags: ProtocolJREAPC,
 		MessageType:   3,
-		Length:       21,
+		Length:        21,
 	}
 
 	buf := make([]byte, 7) // Too small
