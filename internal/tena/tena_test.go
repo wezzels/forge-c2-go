@@ -108,3 +108,108 @@ func TestTENAObjectHeaderSize(t *testing.T) {
 		t.Errorf("TENAObjectHeaderSize: got %d, want %d", len(buf), TENAObjectHeaderSize)
 	}
 }
+
+func TestSessionManager(t *testing.T) {
+	sm := NewSessionManager(123)
+	
+	if sm.sessionID != 123 {
+		t.Errorf("sessionID: got %d, want 123", sm.sessionID)
+	}
+	
+	if sm.IsConnected() {
+		t.Error("Should not be connected initially")
+	}
+	
+	err := sm.Connect()
+	if err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+	
+	if !sm.IsConnected() {
+		t.Error("Should be connected after Connect()")
+	}
+	
+	err = sm.Disconnect()
+	if err != nil {
+		t.Fatalf("Disconnect failed: %v", err)
+	}
+	
+	if sm.IsConnected() {
+		t.Error("Should not be connected after Disconnect()")
+	}
+}
+
+func TestSessionManagerHeartbeat(t *testing.T) {
+	sm := NewSessionManager(1)
+	sm.Connect()
+	
+	sm.Heartbeat()
+	
+	if sm.TimeSinceLastHeartbeat() > 100*time.Millisecond {
+		t.Error("Heartbeat should update lastHeartbeat")
+	}
+}
+
+func TestSessionManagerFederate(t *testing.T) {
+	sm := NewSessionManager(1)
+	
+	sm.RegisterFederate(100, "Tank-1", "WEAPON")
+	
+	fed, ok := sm.GetFederate(100)
+	if !ok {
+		t.Fatal("Federate should be registered")
+	}
+	
+	if fed.Name != "Tank-1" {
+		t.Errorf("Name: got %s, want Tank-1", fed.Name)
+	}
+	
+	if fed.FederateType != "WEAPON" {
+		t.Errorf("FederateType: got %s, want WEAPON", fed.FederateType)
+	}
+}
+
+func TestObjectLifecycle(t *testing.T) {
+	lc := NewObjectLifecycle()
+	
+	createCalled := false
+	lc.SetOnCreate(func(obj *TENAObject) {
+		createCalled = true
+	})
+	
+	obj := &TENAObject{}
+	lc.TrackCreate(1, obj)
+	
+	if !createCalled {
+		t.Error("onCreate callback should be called")
+	}
+	
+	if _, ok := lc.created[1]; !ok {
+		t.Error("Should track creation time")
+	}
+}
+
+func TestGateway(t *testing.T) {
+	gw := NewGateway(123)
+	
+	// Register mappings
+	gw.RegisterTENAToDIS(1, 100)
+	gw.RegisterTENAToHLA(2, 200)
+	
+	// Query mappings
+	disID, ok := gw.GetDISFromTENA(1)
+	if !ok {
+		t.Fatal("DIS mapping should exist")
+	}
+	if disID != 100 {
+		t.Errorf("DIS ID: got %d, want 100", disID)
+	}
+	
+	hlaHandle, ok := gw.GetHLAFromTENA(2)
+	if !ok {
+		t.Fatal("HLA mapping should exist")
+	}
+	if hlaHandle != 200 {
+		t.Errorf("HLA handle: got %d, want 200", hlaHandle)
+	}
+}
