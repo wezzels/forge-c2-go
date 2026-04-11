@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"forge-c2/jreap/jseries"
+	"forge-c2/mdpa"
 )
 
 // TestEncoderRegistryComplete tests that all J-series types are registered in encoder
 func TestEncoderRegistryComplete(t *testing.T) {
 	enc := NewEncoder("TEST", "ENC")
 
-	// All J-series types that should have encoders
 	types := []MessageType{
 		J0_TrackManagement, J1_NetworkInitialize, J2_Surveillance,
 		J4_EngagementOrder, J5_EngagementStatus, J6_SensorRegistration,
@@ -32,7 +32,6 @@ func TestEncoderRegistryComplete(t *testing.T) {
 func TestDecoderRegistryComplete(t *testing.T) {
 	dec := NewDecoder("TEST", "DEC")
 
-	// All J-series types that should have decoders
 	types := []MessageType{
 		J0_TrackManagement, J1_NetworkInitialize, J2_Surveillance,
 		J4_EngagementOrder, J5_EngagementStatus, J6_SensorRegistration,
@@ -55,26 +54,24 @@ func TestEncodeJ0Roundtrip(t *testing.T) {
 	dec := NewDecoder("TEST", "DEC")
 
 	j0 := &jseries.J0TrackManagement{
-		TrackNumber:    1234,
-		Time:           time.Now(),
-		Latitude:       33.7512,
-		Longitude:     -117.8567,
-		Altitude:      10000,
-		Speed:         250.0,
-		Heading:       90.0,
-		ForceType:     2,
-		Quality:       jseries.QualityIndicator{Quality: 3},
+		TrackNumber:       1234,
+		Time:             time.Now(),
+		Latitude:         33.7512,
+		Longitude:       -117.8567,
+		Altitude:        10000,
+		Speed:           250.0,
+		Heading:         90.0,
+		ForceType:      2,
+		Quality:        jseries.QualityIndicator{Quality: 3},
 		ParticipantNumber: 1,
-		SensorID:     "RADAR-1",
+		SensorID:       "RADAR-1",
 	}
 
-	// Encode via registry
 	encoded, err := enc.EncodeUsing(J0_TrackManagement, j0)
 	if err != nil {
 		t.Fatalf("EncodeUsing failed: %v", err)
 	}
 
-	// Decode via registry
 	decoded, msgType, err := dec.DecodeUsing(encoded)
 	if err != nil {
 		t.Fatalf("DecodeUsing failed: %v", err)
@@ -97,8 +94,6 @@ func TestEncodeJ0Roundtrip(t *testing.T) {
 // TestEncodeUsingUnregisteredType tests error for unregistered type
 func TestEncodeUsingUnregisteredType(t *testing.T) {
 	enc := NewEncoder("TEST", "ENC")
-
-	// Try to encode with an unregistered type
 	_, err := enc.EncodeUsing(MessageType(100), nil)
 	if err == nil {
 		t.Error("Expected error for unregistered message type")
@@ -108,15 +103,10 @@ func TestEncodeUsingUnregisteredType(t *testing.T) {
 // TestDecodeUsingUnregisteredType tests error for unregistered type
 func TestDecodeUsingUnregisteredType(t *testing.T) {
 	dec := NewDecoder("TEST", "DEC")
-
-	// Create a fake JREAP message with unknown type
 	enc := NewEncoder("TEST", "ENC")
 	testMsg := &jseries.J0TrackManagement{TrackNumber: 123}
 	encoded, _ := enc.EncodeUsing(J0_TrackManagement, testMsg)
-
-	// Manually corrupt the type byte to make it unknown
-	encoded[6] = 100 // Change message type
-
+	encoded[6] = 100 // Change message type to unknown
 	_, _, err := dec.DecodeUsing(encoded)
 	if err == nil {
 		t.Error("Expected error for unregistered message type")
@@ -160,3 +150,69 @@ func TestEncodeJ28Roundtrip(t *testing.T) {
 		t.Errorf("TrackNumber: got %d, want %d", j28Decoded.TrackNumber, j28.TrackNumber)
 	}
 }
+
+// TestQualityFlagsPipeline tests that QualityFlags flow through the encoder pipeline
+func TestQualityFlagsPipeline(t *testing.T) {
+	enc := NewEncoder("TEST", "ENC")
+
+	tests := []struct {
+		name  string
+		flags uint8
+	}{
+		{"Good+SNR", mdpa.QualityGood | mdpa.QualitySNRAdequate},
+		{"Good only", mdpa.QualityGood},
+		{"Good+SNR+Correlated", mdpa.QualityGood | mdpa.QualitySNRAdequate | mdpa.QualityCorrelated},
+		{"All flags", 0xFF},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			meta := &mdpa.MDPAMetadata{
+				ProcessingNodeID: "TEST",
+				QualityFlags:     tt.flags,
+				Classification:   "UNCLASSIFIED",
+			}
+
+			track := &testTrack{
+				id: "TRK-001", trackNum: 1234,
+				lat: 33.7512, lon: -117.8567, alt: 10000,
+				speed: 250.0, heading: 90.0, threat: 1,
+				status: "ACTIVE", lastUpdate: time.Now(),
+			}
+
+			encoded, err := enc.EncodeTrackWithMetadata(track, meta)
+			if err != nil {
+				t.Fatalf("EncodeTrackWithMetadata failed: %v", err)
+			}
+			if encoded.Bytes == nil {
+				t.Error("Encoded bytes is nil")
+			}
+		})
+	}
+}
+
+// testTrack is a test implementation of TrackLike
+type testTrack struct {
+	id         string
+	trackNum   uint16
+	lat, lon   float64
+	alt        float64
+	speed      float64
+	heading    float64
+	threat     int
+	status     string
+	lastUpdate time.Time
+	assoc      []string
+}
+
+func (t *testTrack) GetTrackID() string            { return t.id }
+func (t *testTrack) GetTrackNumber() uint16        { return t.trackNum }
+func (t *testTrack) GetLatitude() float64          { return t.lat }
+func (t *testTrack) GetLongitude() float64         { return t.lon }
+func (t *testTrack) GetAltitude() float64          { return t.alt }
+func (t *testTrack) GetSpeed() float64            { return t.speed }
+func (t *testTrack) GetHeading() float64           { return t.heading }
+func (t *testTrack) GetThreatLevel() int          { return t.threat }
+func (t *testTrack) GetStatus() string             { return t.status }
+func (t *testTrack) GetLastUpdate() time.Time      { return t.lastUpdate }
+func (t *testTrack) GetAssociations() []string    { return t.assoc }

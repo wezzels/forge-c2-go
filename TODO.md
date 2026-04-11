@@ -266,13 +266,13 @@ go test ./jreap/...                            # All packages pass
 - [ ] 3.1.6 Add integration test: encode then decode J8-J31 types
 
 ### 3.2 QualityFlags Pipeline
-- [ ] 3.2.1 Define `QualityFlags` type in `mdpa/metadata.go`
-- [ ] 3.2.2 Add `QualityFlags` field to `FORGETrackExtension` struct
-- [ ] 3.2.3 In `correlator.go`: set QualityFlags on outgoing metadata
-- [ ] 3.2.4 In `kafka.go`: carry QualityFlags to JREAP output
-- [ ] 3.2.5 In `c2bmc.go`: map C2BMC quality to JREAP Quality field
-- [ ] 3.2.6 Add roundtrip test: track with known flags → encode → decode → verify flags preserved
-- [ ] 3.2.7 Document QualityFlags mapping in `docs/QUALITYFLAGS.md`
+- [x] 3.2.1 Defined `QualityFlags` type in `mdpa/metadata.go`
+- [x] 3.2.2 Added `QualityFlags` field to `FORGETrackExtension` struct
+- [x] 3.2.3 In `correlator.go`: set QualityFlags on outgoing metadata
+- [x] 3.2.4 In `kafka.go`: carry QualityFlags to JREAP output
+- [x] 3.2.5 In `c2bmc.go`: map C2BMC quality to JREAP Quality field
+- [x] 3.2.6 Added roundtrip test: track with known flags → encode → decode → verify flags preserved
+- [x] 3.2.7 Documented QualityFlags mapping in `docs/QUALITYFLAGS.md`
 
 ### 3.3 CorrelationID Propagation
 - [ ] 3.3.1 Generate UUID for CorrelationID on track creation
