@@ -90,3 +90,51 @@ func TestHLAMessageSize(t *testing.T) {
 		t.Errorf("HLAMessageSize: got %d, want %d", len(buf), HLAMessageSize)
 	}
 }
+
+func TestRTIGatewayCreate(t *testing.T) {
+	gw := NewRTIGateway()
+	
+	err := gw.CreateFederation("TestFed", "test.fed")
+	if err != nil {
+		t.Fatalf("CreateFederation failed: %v", err)
+	}
+	
+	exec, ok := gw.federations["TestFed"]
+	if !ok {
+		t.Fatal("Federation not created")
+	}
+	
+	if exec.Name != "TestFed" {
+		t.Errorf("Name: got %s, want TestFed", exec.Name)
+	}
+}
+
+func TestRTIGatewayJoin(t *testing.T) {
+	gw := NewRTIGateway()
+	gw.CreateFederation("TestFed", "test.fed")
+	
+	handle, err := gw.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	if err != nil {
+		t.Fatalf("JoinFederation failed: %v", err)
+	}
+	
+	if handle == 0 {
+		t.Error("Handle should be non-zero")
+	}
+}
+
+func TestRTIGatewayResign(t *testing.T) {
+	gw := NewRTIGateway()
+	gw.CreateFederation("TestFed", "test.fed")
+	
+	handle, _ := gw.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	
+	err := gw.ResignFederation(handle, ResignDeleteObjects)
+	if err != nil {
+		t.Fatalf("ResignFederation failed: %v", err)
+	}
+	
+	if len(gw.federations) != 0 {
+		t.Error("Federation should be removed after resign")
+	}
+}

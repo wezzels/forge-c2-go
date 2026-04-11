@@ -391,3 +391,276 @@ func bitsToFloat(bits uint64) float64 {
 }
 
 var _ = fmt.Sprintf
+
+// =============================================================================
+// RTI Ambassador Interface (IEEE 1516)
+// =============================================================================
+
+// RTI Ambassador provides federation management services.
+// This is the "fed ambassadors" side - the interface federates use to talk to the RTI.
+
+// FederationExecutionData tracks a running federation
+type FederationExecutionData struct {
+	Name              string
+	FederateHandle    uint32
+	FederationName    string
+	FederateType      string
+	FederateName      string
+	RTIVersion        string
+	JoinTime          time.Time
+	IsAnnounced       bool
+	IsConstrained     bool
+	IsRegulating      bool
+}
+
+// SynchronizationPoint tracks sync point state
+type SynchronizationPoint struct {
+	Label          string
+	Tag            []byte
+	Federates      []string
+	State          SyncState
+}
+
+// SyncState tracks synchronization point progress
+type SyncState uint8
+
+const (
+	SyncStatePending SyncState = iota
+	SyncStateAnnounced
+	SyncStateAchieved
+	SyncStateRegistered
+)
+
+// SaveStatus tracks federation save progress
+type SaveStatus struct {
+	Label       string
+	Time        time.Time
+	Initiating  bool
+	InProgress   bool
+	Complete     bool
+	Failed      bool
+	ErrorReason string
+}
+
+// RTI Ambassador Interface - Federation Management
+type RTIAmbase interface {
+	// CreateFederationExecution creates a new federation execution
+	CreateFederationExecution(name, fom string, params map[string]string) error
+
+	// DestroyFederationExecution destroys a federation execution
+	DestroyFederationExecution(name string) error
+
+	// JoinFederationExecution joins an existing federation
+	JoinFederationExecution(name, federateType, federateName string) (uint32, error)
+
+	// ResignFederationExecution resigns from the federation
+	ResignFederationExecution(joinHandle uint32, reason ResignAction) error
+
+	// RegisterFederationSynchronizationPoint registers a sync point
+	RegisterFederationSynchronizationPoint(label string, tag []byte) error
+
+	// SynchronizationPointAchieved indicates sync point reached
+	SynchronizationPointAchieved(label string) error
+
+	// RequestFederationSave requests a save
+	RequestFederationSave(label string, timeStamp time.Time) error
+
+	// QueryFederationSaveStatus queries save status
+	QueryFederationSaveStatus() (*SaveStatus, error)
+}
+
+// ResignAction specifies how to resign from federation
+type ResignAction uint8
+
+const (
+	ResignNoAction = iota
+	ResignDeleteObjects
+	ResignDeleteObjectsAndReleaseAttributes
+	ResignReleaseAttributes
+	ResignNothing
+)
+
+// RTI Ambassador Interface - Declaration Management
+type RTIDeclarationAmbassador interface {
+	// PublishObjectClassAttributes publishes attributes
+	PublishObjectClass(classHandle uint32, attributes []uint32) error
+
+	// UnpublishObjectClassAttributes unpublishes
+	UnpublishObjectClassAttributes(classHandle uint32, attributes []uint32) error
+
+	// SubscribeObjectClassAttributes subscribes
+	SubscribeObjectClassAttributes(classHandle uint32, attributes []uint32) error
+
+	// UnsubscribeObjectClassAttributes unsubscribes
+	UnsubscribeObjectClassAttributes(classHandle uint32, attributes []uint32) error
+}
+
+// RTI Ambassador Interface - Object Management
+type RTIObjectAmbassador interface {
+	// RegisterObjectInstance registers a new object
+	RegisterObjectInstance(classHandle uint32, name string) (uint32, error)
+
+	// UpdateAttributeValues updates object attributes
+	UpdateAttributeValues(handle uint32, attributes map[uint32][]byte, tag []byte) error
+
+	// DeleteObjectInstance deletes an object
+	DeleteObjectInstance(handle uint32, tag []byte) error
+
+	// RequestAttributeValueUpdate requests update
+	RequestAttributeValueUpdate(handle uint32, attributes []uint32, tag []byte) error
+}
+
+// RTI Ambassador Interface - Time Management
+type RTITimeAmbassador interface {
+	// EnableTimeRegulation enables time regulation
+	EnableTimeRegulation(lookahead time.Duration) error
+
+	// DisableTimeRegulation disables time regulation
+	DisableTimeRegulation() error
+
+	// EnableTimeConstrained enables time constrained
+	EnableTimeConstrained() error
+
+	// DisableTimeConstrained disables time constrained
+	DisableTimeConstrained() error
+
+	// TimeAdvanceRequest requests time advance
+	TimeAdvanceRequest(time time.Time) error
+
+	// QueryLogicalTime queries current logical time
+	QueryLogicalTime() (time.Time, error)
+}
+
+// RTIFederateAmbassador is the callback interface federates implement
+type RTIFederateAmbassador interface {
+	// SynchronizationPointRegistrationSucceeded sync point registered
+	SynchronizationPointRegistrationSucceeded(label string)
+
+	// SynchronizationPointRegistrationFailed sync point failed
+	SynchronizationPointRegistrationFailed(label string)
+
+	// AnnounceSynchronizationPoint sync point announced
+	AnnounceSynchronizationPoint(label string, tag []byte)
+
+	// SynchronizationPointAchieved sync point achieved
+	SynchronizationPointAchieved(label string)
+
+	// ProvideAttributeValueUpdate attribute update requested
+	ProvideAttributeValueUpdate(object uint32, attributes []uint32)
+
+	// DiscoverObjectInstance object discovered
+	DiscoverObjectInstance(object uint32, classHandle uint32, name string)
+
+	// ReflectAttributeValues attributes updated
+	ReflectAttributeValues(object uint32, attributes map[uint32][]byte, tag []byte)
+
+	// RemoveObjectInstance object removed
+	RemoveObjectInstance(object uint32, tag []byte)
+}
+
+// SOM (Simulation Object Model) describes what a federate publishes/subscribes
+type SOM struct {
+	Name              string
+	PublishesClasses  []ObjectClassDescriptor
+	SubscribesClasses []ObjectClassDescriptor
+}
+
+// ObjectClassDescriptor describes an object class in the SOM
+type ObjectClassDescriptor struct {
+	Name          string
+	Handle        uint32
+	Attributes    []AttributeDescriptor
+	ParentHandle  uint32
+}
+
+// AttributeDescriptor describes an attribute in the SOM
+type AttributeDescriptor struct {
+	Name    string
+	Handle  uint32
+	Type    string
+	TupleSpace bool
+}
+
+// FOM (Federation Object Model) for the entire federation
+type FOM struct {
+	Name          string
+	Version       string
+	Objects       []ObjectClassDescriptor
+	Interactions  []InteractionClassDescriptor
+}
+
+// InteractionClassDescriptor describes an interaction class
+type InteractionClassDescriptor struct {
+	Name         string
+	Handle       uint32
+	Parameters   []ParameterDescriptor
+	ParentHandle uint32
+}
+
+// ParameterDescriptor describes an interaction parameter
+type ParameterDescriptor struct {
+	Name  string
+	Handle uint32
+	Type  string
+}
+
+// RTIGateway provides RTI proxy services for FORGE-C2
+type RTIGateway struct {
+	federations map[string]*FederationExecutionData
+	som        *SOM
+	fom        *FOM
+	localFederate *HLALocalFederate
+}
+
+// HLALocalFederate represents our federate in a federation
+type HLALocalFederate struct {
+	Handle            uint32
+	Name              string
+	Type              string
+	JoinedFederation  string
+	SupportsLRC       bool
+}
+
+// NewRTIGateway creates a new RTI gateway
+func NewRTIGateway() *RTIGateway {
+	return &RTIGateway{
+		federations: make(map[string]*FederationExecutionData),
+	}
+}
+
+// CreateFederation creates a new federation execution
+func (r *RTIGateway) CreateFederation(name, fom string) error {
+	r.federations[name] = &FederationExecutionData{
+		Name:       name,
+		RTIVersion: RTIVersion,
+		JoinTime:   time.Now(),
+	}
+	return nil
+}
+
+// JoinFederation joins an existing federation
+func (r *RTIGateway) JoinFederation(name, federateType, federateName string) (uint32, error) {
+	exec, ok := r.federations[name]
+	if !ok {
+		return 0, fmt.Errorf("federation %s not found", name)
+	}
+
+	handle := uint32(time.Now().UnixNano())
+	exec.FederateHandle = handle
+	exec.FederateType = federateType
+	exec.FederateName = federateName
+	exec.JoinTime = time.Now()
+
+	return handle, nil
+}
+
+// ResignFederation resigns from a federation
+func (r *RTIGateway) ResignFederation(handle uint32, action ResignAction) error {
+	for name, exec := range r.federations {
+		if exec.FederateHandle == handle {
+			delete(r.federations, name)
+			return nil
+		}
+	}
+	return fmt.Errorf("federate handle %d not found", handle)
+}
