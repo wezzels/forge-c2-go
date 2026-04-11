@@ -138,3 +138,116 @@ func TestRTIGatewayResign(t *testing.T) {
 		t.Error("Federation should be removed after resign")
 	}
 }
+
+func TestDeclarationManagerPublish(t *testing.T) {
+	dm := NewDeclarationManager()
+	
+	err := dm.PublishObjectClass(HandleObjectEntity, []uint32{HandleAttrEntityID, HandleAttrPosition})
+	if err != nil {
+		t.Fatalf("PublishObjectClass failed: %v", err)
+	}
+	
+	if !dm.IsPublished(HandleObjectEntity) {
+		t.Error("Class should be published")
+	}
+	
+	if dm.IsPublished(HandleObjectTrack) {
+		t.Error("Class should not be published")
+	}
+}
+
+func TestDeclarationManagerSubscribe(t *testing.T) {
+	dm := NewDeclarationManager()
+	
+	dm.SubscribeObjectClassAttributes(HandleObjectTrack, []uint32{HandleAttrTrackNumber, HandleAttrTrackQuality})
+	
+	if !dm.IsSubscribed(HandleObjectTrack) {
+		t.Error("Class should be subscribed")
+	}
+}
+
+func TestObjectManagerRegister(t *testing.T) {
+	om := NewObjectManager()
+	
+	handle, err := om.RegisterObjectInstance(HandleObjectEntity, "Tank-1")
+	if err != nil {
+		t.Fatalf("RegisterObjectInstance failed: %v", err)
+	}
+	
+	if handle == 0 {
+		t.Error("Handle should be non-zero")
+	}
+	
+	obj, ok := om.GetObjectByHandle(handle)
+	if !ok {
+		t.Fatal("Object should be retrievable by handle")
+	}
+	
+	if obj.Name != "Tank-1" {
+		t.Errorf("Name: got %s, want Tank-1", obj.Name)
+	}
+	
+	obj2, ok := om.GetObjectByName("Tank-1")
+	if !ok {
+		t.Fatal("Object should be retrievable by name")
+	}
+	
+	if obj2.Handle != handle {
+		t.Error("Same object should be returned by name lookup")
+	}
+}
+
+func TestObjectManagerUpdate(t *testing.T) {
+	om := NewObjectManager()
+	
+	handle, _ := om.RegisterObjectInstance(HandleObjectEntity, "Tank-1")
+	
+	err := om.UpdateAttributeValues(handle, map[uint32][]byte{
+		HandleAttrPosition: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+	}, []byte("test"))
+	if err != nil {
+		t.Fatalf("UpdateAttributeValues failed: %v", err)
+	}
+	
+	obj, _ := om.GetObjectByHandle(handle)
+	if obj.Attributes[HandleAttrPosition] == nil {
+		t.Error("Position should be updated")
+	}
+}
+
+func TestTimeManager(t *testing.T) {
+	tm := NewTimeManager()
+	
+	if tm.isRegulating {
+		t.Error("Should not be regulating initially")
+	}
+	
+	err := tm.EnableTimeRegulation(10 * time.Millisecond)
+	if err != nil {
+		t.Fatalf("EnableTimeRegulation failed: %v", err)
+	}
+	
+	if !tm.isRegulating {
+		t.Error("Should be regulating after enable")
+	}
+	
+	err = tm.DisableTimeRegulation()
+	if err != nil {
+		t.Fatalf("DisableTimeRegulation failed: %v", err)
+	}
+	
+	if tm.isRegulating {
+		t.Error("Should not be regulating after disable")
+	}
+}
+
+func TestTimeManagerAdvance(t *testing.T) {
+	tm := NewTimeManager()
+	
+	now := time.Now()
+	tm.TimeAdvanceRequest(now.Add(100 * time.Millisecond))
+	
+	if tm.currentTime != now.Add(100 * time.Millisecond) {
+		t.Error("Current time should be updated")
+	}
+}

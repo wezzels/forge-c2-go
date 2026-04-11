@@ -664,3 +664,285 @@ func (r *RTIGateway) ResignFederation(handle uint32, action ResignAction) error 
 	}
 	return fmt.Errorf("federate handle %d not found", handle)
 }
+
+// =============================================================================
+// HLA Declaration Management Implementation
+// =============================================================================
+
+// Publication tracks what a federate publishes
+type Publication struct {
+	ClassHandle   uint32
+	Attributes    []uint32
+	SubscribedBy  []uint32 // federate handles
+}
+
+// Subscription tracks what a federate subscribes to
+type Subscription struct {
+	ClassHandle   uint32
+	Attributes    []uint32
+	PublishedBy   []uint32 // federate handles
+}
+
+// DeclarationManager handles HLA pub/sub
+type DeclarationManager struct {
+	publications  map[uint32]*Publication
+	subscriptions map[uint32]*Subscription
+	objectClasses map[uint32]*ObjectClassDescriptor
+}
+
+// NewDeclarationManager creates a new declaration manager
+func NewDeclarationManager() *DeclarationManager {
+	return &DeclarationManager{
+		publications:  make(map[uint32]*Publication),
+		subscriptions: make(map[uint32]*Subscription),
+		objectClasses: make(map[uint32]*ObjectClassDescriptor),
+	}
+}
+
+// PublishObjectClass publishes an object class
+func (d *DeclarationManager) PublishObjectClass(classHandle uint32, attributes []uint32) error {
+	d.publications[classHandle] = &Publication{
+		ClassHandle: classHandle,
+		Attributes:  attributes,
+	}
+	return nil
+}
+
+// UnpublishObjectClass unpublishes an object class
+func (d *DeclarationManager) UnpublishObjectClass(classHandle uint32) error {
+	delete(d.publications, classHandle)
+	return nil
+}
+
+// SubscribeObjectClassAttributes subscribes to attributes
+func (d *DeclarationManager) SubscribeObjectClassAttributes(classHandle uint32, attributes []uint32) error {
+	d.subscriptions[classHandle] = &Subscription{
+		ClassHandle: classHandle,
+		Attributes:  attributes,
+	}
+	return nil
+}
+
+// UnsubscribeObjectClassAttributes unsubscribes
+func (d *DeclarationManager) UnsubscribeObjectClassAttributes(classHandle uint32) error {
+	delete(d.subscriptions, classHandle)
+	return nil
+}
+
+// IsPublished checks if a class is published
+func (d *DeclarationManager) IsPublished(classHandle uint32) bool {
+	_, ok := d.publications[classHandle]
+	return ok
+}
+
+// IsSubscribed checks if a class is subscribed
+func (d *DeclarationManager) IsSubscribed(classHandle uint32) bool {
+	_, ok := d.subscriptions[classHandle]
+	return ok
+}
+
+// =============================================================================
+// HLA Object Management Implementation
+// =============================================================================
+
+// ObjectInstance represents a registered object in the federation
+type ObjectInstance struct {
+	Handle         uint32
+	ClassHandle    uint32
+	Name           string
+	Owner          uint32
+	Attributes     map[uint32][]byte
+	LastUpdateTime time.Time
+}
+
+// ObjectManager handles HLA object instances
+type ObjectManager struct {
+	instances       map[uint32]*ObjectInstance
+	names           map[string]uint32 // name -> handle
+	classToInstances map[uint32][]uint32
+	discoveryCB     func(object uint32, classHandle uint32, name string)
+	reflectionCB    func(object uint32, attributes map[uint32][]byte, tag []byte)
+}
+
+// NewObjectManager creates a new object manager
+func NewObjectManager() *ObjectManager {
+	return &ObjectManager{
+		instances:        make(map[uint32]*ObjectInstance),
+		names:            make(map[string]uint32),
+		classToInstances: make(map[uint32][]uint32),
+	}
+}
+
+// RegisterObjectInstance registers a new object
+func (m *ObjectManager) RegisterObjectInstance(classHandle uint32, name string) (uint32, error) {
+	// Generate a unique handle
+	handle := uint32(time.Now().UnixNano())
+
+	obj := &ObjectInstance{
+		Handle:         handle,
+		ClassHandle:    classHandle,
+		Name:           name,
+		Attributes:     make(map[uint32][]byte),
+		LastUpdateTime: time.Now(),
+	}
+
+	m.instances[handle] = obj
+	m.names[name] = handle
+	m.classToInstances[classHandle] = append(m.classToInstances[classHandle], handle)
+
+	// Fire discovery callback if set
+	if m.discoveryCB != nil {
+		m.discoveryCB(handle, classHandle, name)
+	}
+
+	return handle, nil
+}
+
+// UpdateAttributeValues updates object attributes
+func (m *ObjectManager) UpdateAttributeValues(handle uint32, attributes map[uint32][]byte, tag []byte) error {
+	obj, ok := m.instances[handle]
+	if !ok {
+		return fmt.Errorf("object %d not found", handle)
+	}
+
+	for attrHandle, value := range attributes {
+		obj.Attributes[attrHandle] = value
+	}
+	obj.LastUpdateTime = time.Now()
+
+	// Fire reflection callback if set
+	if m.reflectionCB != nil {
+		m.reflectionCB(handle, attributes, tag)
+	}
+
+	return nil
+}
+
+// DeleteObjectInstance deletes an object
+func (m *ObjectManager) DeleteObjectInstance(handle uint32, tag []byte) error {
+	obj, ok := m.instances[handle]
+	if !ok {
+		return fmt.Errorf("object %d not found", handle)
+	}
+
+	delete(m.names, obj.Name)
+	delete(m.instances, handle)
+
+	// Remove from class index
+	handles := m.classToInstances[obj.ClassHandle]
+	for i, h := range handles {
+		if h == handle {
+			m.classToInstances[obj.ClassHandle] = append(handles[:i], handles[i+1:]...)
+			break
+		}
+	}
+
+	return nil
+}
+
+// GetObjectByHandle retrieves an object by handle
+func (m *ObjectManager) GetObjectByHandle(handle uint32) (*ObjectInstance, bool) {
+	obj, ok := m.instances[handle]
+	return obj, ok
+}
+
+// GetObjectByName retrieves an object by name
+func (m *ObjectManager) GetObjectByName(name string) (*ObjectInstance, bool) {
+	handle, ok := m.names[name]
+	if !ok {
+		return nil, false
+	}
+	return m.instances[handle], true
+}
+
+// GetObjectsByClass returns all objects of a class
+func (m *ObjectManager) GetObjectsByClass(classHandle uint32) []*ObjectInstance {
+	var result []*ObjectInstance
+	for _, h := range m.classToInstances[classHandle] {
+		if obj, ok := m.instances[h]; ok {
+			result = append(result, obj)
+		}
+	}
+	return result
+}
+
+// SetDiscoveryCallback sets the discovery callback
+func (m *ObjectManager) SetDiscoveryCallback(cb func(object uint32, classHandle uint32, name string)) {
+	m.discoveryCB = cb
+}
+
+// SetReflectionCallback sets the reflection callback
+func (m *ObjectManager) SetReflectionCallback(cb func(object uint32, attributes map[uint32][]byte, tag []byte)) {
+	m.reflectionCB = cb
+}
+
+// =============================================================================
+// HLA Time Management Implementation
+// =============================================================================
+
+// TimeManager handles HLA logical time
+type TimeManager struct {
+	lookahead       time.Duration
+	LBTS           time.Time // Lower Bound on Times Stamp
+	currentTime     time.Time
+	isRegulating    bool
+	isConstrained   bool
+	isAdvancing     bool
+	federateHandle  uint32
+}
+
+// NewTimeManager creates a new time manager
+func NewTimeManager() *TimeManager {
+	return &TimeManager{
+		LBTS:       time.Time{},
+		currentTime: time.Time{},
+		lookahead:  10 * time.Millisecond,
+	}
+}
+
+// EnableTimeRegulation enables time regulation
+func (t *TimeManager) EnableTimeRegulation(lookahead time.Duration) error {
+	t.isRegulating = true
+	t.lookahead = lookahead
+	return nil
+}
+
+// DisableTimeRegulation disables time regulation
+func (t *TimeManager) DisableTimeRegulation() error {
+	t.isRegulating = false
+	return nil
+}
+
+// EnableTimeConstrained enables time constrained
+func (t *TimeManager) EnableTimeConstrained() error {
+	t.isConstrained = true
+	return nil
+}
+
+// DisableTimeConstrained disables time constrained
+func (t *TimeManager) DisableTimeConstrained() error {
+	t.isConstrained = false
+	return nil
+}
+
+// TimeAdvanceRequest requests time advance
+func (t *TimeManager) TimeAdvanceRequest(requestedTime time.Time) error {
+	t.isAdvancing = true
+	t.currentTime = requestedTime
+	return nil
+}
+
+// QueryLogicalTime returns the current logical time
+func (t *TimeManager) QueryLogicalTime() time.Time {
+	return t.currentTime
+}
+
+// ModifyLBTS modifies the Lower Bound on Times Stamp
+func (t *TimeManager) ModifyLBTS(newLBTS time.Time) {
+	t.LBTS = newLBTS
+}
+
+// FlushQueueRequest requests queue flush at time
+func (t *TimeManager) FlushQueueRequest(requestedTime time.Time) error {
+	return nil
+}
