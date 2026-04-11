@@ -310,13 +310,13 @@ go test ./jreap/...                            # All packages pass
 - [x] 3.5.10 J30 IFF roundtrip
 - [x] 3.5.11 J31 FileTransfer roundtrip (variable + submessage chain)
 
-### 3.6 Internal Handlers Integration
-- [ ] 3.6.1 Wire encoder into `track_mgr_handler.go` (output path)
-- [ ] 3.6.2 Wire decoder into `jreap_consumer.go` (input path)
-- [ ] 3.6.3 Wire encoder into `alert_handler.go` (J12 output)
-- [ ] 3.6.4 Wire encoder into `engagement_handler.go` (J4/J5 output)
-- [ ] 3.6.5 Wire decoder into `server.go` (incoming DIS/HLA)
-- [ ] 3.6.6 Add integration test: kafka → decoder → handler → encoder → kafka
+### 3.6 Internal Handlers Integration ✅
+- [x] 3.6.1 Wired encoder into `track_mgr_handler.go` (output path)
+- [x] 3.6.2 Wired decoder into `jreap_consumer.go` (input path)
+- [x] 3.6.3 Wired encoder into `alert_handler.go` (J12 output)
+- [x] 3.6.4 Wired encoder into `engagement_handler.go` (J4/J5 output)
+- [x] 3.6.5 Wired decoder into `server.go` (incoming DIS/HLA)
+- [x] 3.6.6 Added integration test: kafka → decoder → handler → encoder → kafka
 
 **Phase 3 Verification:**
 ```bash
