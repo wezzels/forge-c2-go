@@ -946,3 +946,205 @@ func (t *TimeManager) ModifyLBTS(newLBTS time.Time) {
 func (t *TimeManager) FlushQueueRequest(requestedTime time.Time) error {
 	return nil
 }
+
+// =============================================================================
+// HLA Ownership Management Implementation
+// =============================================================================
+
+// OwnershipEntry tracks attribute ownership state
+type OwnershipEntry struct {
+	AttributeHandle uint32
+	Owner          uint32 // federate handle, 0 = unowned
+	Valid          bool
+}
+
+// OwnershipManager handles HLA attribute ownership
+type OwnershipManager struct {
+	ownerships map[uint32]map[uint32]*OwnershipEntry // object -> attr -> entry
+}
+
+// NewOwnershipManager creates a new ownership manager
+func NewOwnershipManager() *OwnershipManager {
+	return &OwnershipManager{
+		ownerships: make(map[uint32]map[uint32]*OwnershipEntry),
+	}
+}
+
+// QueryAttributeOwnership queries who owns an attribute
+func (m *OwnershipManager) QueryAttributeOwnership(objectHandle, attrHandle uint32) (uint32, bool) {
+	if obj, ok := m.ownerships[objectHandle]; ok {
+		if entry, ok := obj[attrHandle]; ok && entry.Valid {
+			return entry.Owner, true
+		}
+	}
+	return 0, false
+}
+
+// AttributeIsOwnedByFederate checks if a federate owns an attribute
+func (m *OwnershipManager) AttributeIsOwnedByFederate(objectHandle, attrHandle, federateHandle uint32) bool {
+	owner, ok := m.QueryAttributeOwnership(objectHandle, attrHandle)
+	return ok && owner == federateHandle
+}
+
+// NominateAttributeOwnership nominates a new owner for attributes
+func (m *OwnershipManager) NominateAttributeOwnership(objectHandle, attrHandle, nominatedOwner uint32) error {
+	if m.ownerships[objectHandle] == nil {
+		m.ownerships[objectHandle] = make(map[uint32]*OwnershipEntry)
+	}
+	m.ownerships[objectHandle][attrHandle] = &OwnershipEntry{
+		AttributeHandle: attrHandle,
+		Owner:          nominatedOwner,
+		Valid:          true,
+	}
+	return nil
+}
+
+// AcquireAttributeOwnership acquires ownership
+func (m *OwnershipManager) AcquireAttributeOwnership(objectHandle, attrHandle, newOwner uint32) error {
+	return m.NominateAttributeOwnership(objectHandle, attrHandle, newOwner)
+}
+
+// AcquireAttributeOwnershipIfAvailable acquires if available
+func (m *OwnershipManager) AcquireAttributeOwnershipIfAvailable(objectHandle, attrHandle, newOwner uint32) (bool, error) {
+	currentOwner, isOwned := m.QueryAttributeOwnership(objectHandle, attrHandle)
+	if isOwned && currentOwner != 0 {
+		return false, nil // not available
+	}
+	m.NominateAttributeOwnership(objectHandle, attrHandle, newOwner)
+	return true, nil
+}
+
+// UnconditionalAttributeOwnershipDivestiture divests without callback
+func (m *OwnershipManager) UnconditionalAttributeOwnershipDivestiture(objectHandle uint32, attributes []uint32) error {
+	for _, attr := range attributes {
+		if obj, ok := m.ownerships[objectHandle]; ok {
+			if entry, ok := obj[attr]; ok {
+				entry.Owner = 0 // unowned
+			}
+		}
+	}
+	return nil
+}
+
+// GetOwnedAttributes returns all attributes owned by a federate
+func (m *OwnershipManager) GetOwnedAttributes(objectHandle, federateHandle uint32) []uint32 {
+	var result []uint32
+	if obj, ok := m.ownerships[objectHandle]; ok {
+		for attr, entry := range obj {
+			if entry.Owner == federateHandle && entry.Valid {
+				result = append(result, attr)
+			}
+		}
+	}
+	return result
+}
+
+// AttributeOwnershipAcquisitionNotification callback type
+type AttributeOwnershipAcquisitionNotificationCallback func(objectHandle uint32, attributes []uint32, owner uint32)
+
+// AttributeOwnershipUnavailable callback type
+type AttributeOwnershipUnavailableCallback func(objectHandle uint32, attributes []uint32)
+
+// ConfirmAttributeOwnershipAcquisition callback type
+type ConfirmAttributeOwnershipAcquisitionCallback func(objectHandle uint32, attributes []uint32, owner uint32) bool
+
+// =============================================================================
+// HLA Data Distribution Management (DDM)
+// =============================================================================
+
+// Region represents a routing space region
+type Region struct {
+	Handle         uint32
+	RoutingSpace   uint32
+	Extent         [6]float64 // [xmin, xmax, ymin, ymax, zmin, zmax]
+	Subscriptions  []uint32
+}
+
+// RoutingSpace defines a dimension for DDM
+type RoutingSpace struct {
+	Handle       uint32
+	Name         string
+	Dimensions   []Dimension
+	AddressSpace uint32
+}
+
+// Dimension defines a single dimension of a routing space
+type Dimension struct {
+	Handle        uint32
+	Name          string
+	UpperBound    float64
+	LowerBound    float64
+	Units         string
+}
+
+// DDMManager handles data distribution management
+type DDMManager struct {
+	regions      map[uint32]*Region
+	routingSpaces map[uint32]*RoutingSpace
+	nextRegionHandle uint32
+}
+
+// NewDDMManager creates a new DDM manager
+func NewDDMManager() *DDMManager {
+	return &DDMManager{
+		regions:       make(map[uint32]*Region),
+		routingSpaces: make(map[uint32]*RoutingSpace),
+		nextRegionHandle: 1,
+	}
+}
+
+// CreateRegion creates a new region
+func (m *DDMManager) CreateRegion(routingSpace uint32, extent [6]float64) (*Region, error) {
+	region := &Region{
+		Handle:       m.nextRegionHandle,
+		RoutingSpace: routingSpace,
+		Extent:       extent,
+		Subscriptions: []uint32{},
+	}
+	m.nextRegionHandle++
+	m.regions[region.Handle] = region
+	return region, nil
+}
+
+// DeleteRegion deletes a region
+func (m *DDMManager) DeleteRegion(handle uint32) error {
+	delete(m.regions, handle)
+	return nil
+}
+
+// RegisterObjectInstanceWithRegion registers with DDM region
+func (m *DDMManager) RegisterObjectInstanceWithRegion(objectHandle, classHandle, regionHandle uint32) error {
+	return nil // Simplified implementation
+}
+
+// UpdateAttributeValuesWithRegion updates with DDM
+func (m *DDMManager) UpdateAttributeValuesWithRegion(objectHandle uint32, attributes map[uint32][]byte, regionHandle uint32, tag []byte) error {
+	return nil // Simplified implementation
+}
+
+// SubscribeObjectClassAttributesWithRegion subscribes with region
+func (m *DDMManager) SubscribeObjectClassAttributesWithRegion(classHandle, regionHandle uint32, attributes []uint32) error {
+	if region, ok := m.regions[regionHandle]; ok {
+		region.Subscriptions = append(region.Subscriptions, classHandle)
+	}
+	return nil
+}
+
+// GetRegion returns a region by handle
+func (m *DDMManager) GetRegion(handle uint32) (*Region, bool) {
+	region, ok := m.regions[handle]
+	return region, ok
+}
+
+// RegisterRoutingSpace registers a routing space
+func (m *DDMManager) RegisterRoutingSpace(name string, dims []Dimension) (*RoutingSpace, error) {
+	handle := uint32(len(m.routingSpaces) + 1)
+	rs := &RoutingSpace{
+		Handle:       handle,
+		Name:         name,
+		Dimensions:   dims,
+		AddressSpace: 0,
+	}
+	m.routingSpaces[handle] = rs
+	return rs, nil
+}

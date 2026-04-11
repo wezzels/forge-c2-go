@@ -251,3 +251,110 @@ func TestTimeManagerAdvance(t *testing.T) {
 		t.Error("Current time should be updated")
 	}
 }
+
+func TestOwnershipManager(t *testing.T) {
+	om := NewOwnershipManager()
+	
+	// Nominate ownership
+	om.NominateAttributeOwnership(1, 100, 42)
+	
+	owner, ok := om.QueryAttributeOwnership(1, 100)
+	if !ok {
+		t.Fatal("Should have ownership entry")
+	}
+	if owner != 42 {
+		t.Errorf("Owner: got %d, want 42", owner)
+	}
+	
+	// Check if owned by federate
+	if !om.AttributeIsOwnedByFederate(1, 100, 42) {
+		t.Error("Should be owned by federate 42")
+	}
+	
+	if om.AttributeIsOwnedByFederate(1, 100, 99) {
+		t.Error("Should not be owned by federate 99")
+	}
+}
+
+func TestOwnershipManagerAcquire(t *testing.T) {
+	om := NewOwnershipManager()
+	
+	// Acquire if available
+	available, err := om.AcquireAttributeOwnershipIfAvailable(1, 100, 42)
+	if err != nil {
+		t.Fatalf("Acquire failed: %v", err)
+	}
+	if !available {
+		t.Error("Should be available")
+	}
+	
+	// Try again - should not be available
+	available, err = om.AcquireAttributeOwnershipIfAvailable(1, 100, 99)
+	if err != nil {
+		t.Fatalf("Acquire failed: %v", err)
+	}
+	if available {
+		t.Error("Should not be available after first acquire")
+	}
+}
+
+func TestDDMManager(t *testing.T) {
+	ddm := NewDDMManager()
+	
+	// Create region
+	extent := [6]float64{0, 100, 0, 100, 0, 100}
+	region, err := ddm.CreateRegion(1, extent)
+	if err != nil {
+		t.Fatalf("CreateRegion failed: %v", err)
+	}
+	
+	if region.Handle != 1 {
+		t.Errorf("Handle: got %d, want 1", region.Handle)
+	}
+	
+	if region.Extent[0] != 0 || region.Extent[1] != 100 {
+		t.Error("Extent not set correctly")
+	}
+	
+	// Get region
+	found, ok := ddm.GetRegion(1)
+	if !ok {
+		t.Error("Region should be retrievable")
+	}
+	if found.Handle != region.Handle {
+		t.Error("Retrieved region mismatch")
+	}
+	
+	// Delete region
+	err = ddm.DeleteRegion(1)
+	if err != nil {
+		t.Fatalf("DeleteRegion failed: %v", err)
+	}
+	
+	_, ok = ddm.GetRegion(1)
+	if ok {
+		t.Error("Region should be deleted")
+	}
+}
+
+func TestDDMRoutingSpace(t *testing.T) {
+	ddm := NewDDMManager()
+	
+	dims := []Dimension{
+		{Handle: 1, Name: "X", UpperBound: 1000, LowerBound: 0, Units: "meters"},
+		{Handle: 2, Name: "Y", UpperBound: 1000, LowerBound: 0, Units: "meters"},
+	}
+	
+	rs, err := ddm.RegisterRoutingSpace("AirSpace3D", dims)
+	if err != nil {
+		t.Fatalf("RegisterRoutingSpace failed: %v", err)
+	}
+	
+	if rs.Name != "AirSpace3D" {
+		t.Errorf("Name: got %s, want AirSpace3D", rs.Name)
+	}
+	
+	if len(rs.Dimensions) != 2 {
+		t.Errorf("Dimensions: got %d, want 2", len(rs.Dimensions))
+	}
+}
