@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: forge-c2
+  labels:
+    app: forge-c2
+    environment: production

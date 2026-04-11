@@ -1,0 +1,71 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forge-c2
+  namespace: forge-c2
+  labels:
+    app: forge-c2
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9091"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  - name: grpc
+    port: 9090
+    targetPort: grpc
+    protocol: TCP
+  - name: metrics
+    port: 9091
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: forge-c2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forge-c2-loadbalancer
+  namespace: forge-c2
+  labels:
+    app: forge-c2
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  - name: https
+    port: 443
+    targetPort: http
+  - name: grpc
+    port: 9090
+    targetPort: grpc
+  selector:
+    app: forge-c2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forge-c2-worker
+  namespace: forge-c2
+  labels:
+    app: forge-c2-worker
+spec:
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: 9091
+    targetPort: metrics
+  selector:
+    app: forge-c2-worker

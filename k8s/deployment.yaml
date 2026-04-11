@@ -1,0 +1,226 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-c2
+  namespace: forge-c2
+  labels:
+    app: forge-c2
+    version: v1.0.0
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: forge-c2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: forge-c2
+        version: v1.0.0
+    spec:
+      serviceAccountName: forge-c2
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: forge-c2
+        image: ghcr.io/stsgym/forge-c2:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: grpc
+          containerPort: 9090
+          protocol: TCP
+        - name: metrics
+          containerPort: 9091
+          protocol: TCP
+        env:
+        - name: FORGE_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: log_level
+        - name: FORGE_KAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: kafka_brokers
+        - name: FORGE_JREAP_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: jreap_enabled
+        - name: FORGE_DIS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: dis_enabled
+        - name: FORGE_HLA_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: hla_enabled
+        - name: FORGE_TENA_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: tena_enabled
+        - name: FORGE_MDPAF_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: mdpa_enabled
+        - name: FORGE_TLS_CERT_PATH
+          value: /certs/tls.crt
+        - name: FORGE_TLS_KEY_PATH
+          value: /certs/tls.key
+        - name: GIN_MODE
+          value: "release"
+        - name: GOMAXPROCS
+          value: "4"
+        - name: GOTRACEBACK
+          value: "single"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          failureThreshold: 30
+        volumeMounts:
+        - name: tls-certs
+          readOnly: true
+          mountPath: /certs
+        - name: scratch
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: tls-certs
+        secret:
+          secretName: forge-c2-tls
+          optional: false
+      - name: scratch
+        emptyDir: {}
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: forge-c2
+              topologyKey: kubernetes.io/hostname
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: forge-c2
+            topologyKey: topology.kubernetes.io/zone
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-c2-worker
+  namespace: forge-c2
+  labels:
+    app: forge-c2-worker
+    version: v1.0.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: forge-c2-worker
+  template:
+    metadata:
+      labels:
+        app: forge-c2-worker
+        version: v1.0.0
+    spec:
+      serviceAccountName: forge-c2
+      containers:
+      - name: worker
+        image: ghcr.io/stsgym/forge-c2:latest
+        command: ["/app/forge-c2", "worker"]
+        ports:
+        - name: metrics
+          containerPort: 9091
+        env:
+        - name: FORGE_MODE
+          value: "worker"
+        - name: FORGE_KAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: forge-c2-config
+              key: kafka_brokers
+        - name: FORGE_KAFKA_CONSUMER_GROUP
+          value: "forge-c2-workers"
+        - name: GOMAXPROCS
+          value: "2"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        livenessProbe:
+          exec:
+            command:
+            - /app/forge-c2
+            - health
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      nodeSelector:
+        kubernetes.io/os: linux

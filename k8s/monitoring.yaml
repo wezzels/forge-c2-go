@@ -1,0 +1,166 @@
+---
+# Prometheus Operator CRDs (install via operator-sdk or community)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: forge-c2-monitor
+  namespace: forge-c2
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: forge-c2
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 15s
+  namespaceSelector:
+    matchNames:
+    - forge-c2
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: forge-c2-alerts
+  namespace: forge-c2
+  labels:
+    release: prometheus
+spec:
+  groups:
+  - name: forge-c2.rules
+    rules:
+    - alert: ForgeC2HighErrorRate
+      expr: rate(forge_c2_errors_total[5m]) > 0.1
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High error rate in FORGE-C2"
+        description: "FORGE-C2 error rate is {{ $value }} errors/sec"
+    - alert: ForgeC2Down
+      expr: up{job="forge-c2"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "FORGE-C2 is down"
+        description: "FORGE-C2 has been down for more than 1 minute"
+    - alert: ForgeC2HighLatency
+      expr: histogram_quantile(0.95, rate(forge_c2_encode_duration_seconds_bucket[5m])) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High latency in FORGE-C2"
+        description: "95th percentile latency is {{ $value }}s"
+    - alert: ForgeC2KafkaLag
+      expr: kafka_consumer_lag > 10000
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Kafka consumer lag"
+        description: "Kafka consumer lag is {{ $value }} messages"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-forge-c2
+  namespace: forge-c2
+  labels:
+    grafana_dashboard: "1"
+data:
+  forge-c2-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "FORGE-C2",
+        "uid": "forge-c2",
+        "panels": [
+          {
+            "title": "J-series Encode Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(forge_c2_encode_total[5m])",
+                "legendFormat": "encode/sec"
+              }
+            ]
+          },
+          {
+            "title": "J-series Decode Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(forge_c2_decode_total[5m])",
+                "legendFormat": "decode/sec"
+              }
+            ]
+          },
+          {
+            "title": "Encode Latency (p95)",
+            "type": "gauge",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(forge_c2_encode_duration_seconds_bucket[5m]))"
+              }
+            ]
+          },
+          {
+            "title": "Decode Latency (p95)",
+            "type": "gauge",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(forge_c2_decode_duration_seconds_bucket[5m]))"
+              }
+            ]
+          },
+          {
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(forge_c2_errors_total[5m])",
+                "legendFormat": "errors/sec"
+              }
+            ]
+          },
+          {
+            "title": "Active Connections",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "forge_c2_connections_active"
+              }
+            ]
+          },
+          {
+            "title": "Kafka Consumer Lag",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "kafka_consumer_lag"
+              }
+            ]
+          },
+          {
+            "title": "Memory Usage",
+            "type": "gauge",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes{pod=~\"forge-c2.*\"} / container_spec_memory_limit_bytes{pod=~\"forge-c2.*\"}"
+              }
+            ]
+          },
+          {
+            "title": "CPU Usage",
+            "type": "gauge",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{pod=~\"forge-c2.*\"}[5m])"
+              }
+            ]
+          }
+        ]
+      }
+    }
