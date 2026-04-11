@@ -247,3 +247,74 @@ func TestMapperJSeriesToDIS(t *testing.T) {
 		t.Errorf("VelocityX: got %f, want %f", pdu.VelocityX, 250.0)
 	}
 }
+
+func TestVariableParameterPackUnpack(t *testing.T) {
+	orig := &ArticulatedPartVP{
+		ArticulatedPart: ArticulatedPart{
+			ChangeIndicator: 1,
+			PartAttachedTo: 2,
+			ParameterType:  ArticulatedTypeAzimuth,
+			ParameterValue1: 45.5,
+			ParameterValue2: 90.0,
+		},
+	}
+
+	buf := make([]byte, 20)
+	n := PackVariableParameter(orig, buf)
+
+	vp, _ := UnpackVariableParameter(buf)
+	if vp == nil {
+		t.Fatalf("Unpack returned nil")
+	}
+
+	unpacked, ok := vp.(*ArticulatedPartVP)
+	if !ok {
+		t.Fatalf("Wrong type: %T", vp)
+	}
+	if unpacked.ArticulatedPart.ChangeIndicator != orig.ArticulatedPart.ChangeIndicator {
+		t.Errorf("ChangeIndicator: got %d, want %d", unpacked.ArticulatedPart.ChangeIndicator, orig.ArticulatedPart.ChangeIndicator)
+	}
+	if unpacked.ArticulatedPart.ParameterType != orig.ArticulatedPart.ParameterType {
+		t.Errorf("ParameterType: got %d, want %d", unpacked.ArticulatedPart.ParameterType, orig.ArticulatedPart.ParameterType)
+	}
+	if n < 12 {
+		t.Errorf("Pack size too small: %d", n)
+	}
+}
+
+func TestAttachedPartPackUnpack(t *testing.T) {
+	orig := &AttachedPartVP{
+		AttachedPart: AttachedPart{
+			ChangeIndicator: 1,
+			PartAttachedTo: 0,
+			PartType: EntityType{
+				Kind:        1,
+				Domain:      2,
+				Country:     225,
+				Category:    1,
+				Subcategory: 1,
+				Specific:    1,
+				Extra1:      0,
+			},
+		},
+	}
+
+	buf := make([]byte, 20)
+	n := PackVariableParameter(orig, buf)
+
+	vp, _ := UnpackVariableParameter(buf)
+	if vp == nil {
+		t.Fatalf("Unpack returned nil")
+	}
+
+	unpacked, ok := vp.(*AttachedPartVP)
+	if !ok {
+		t.Fatalf("Wrong type: %T", vp)
+	}
+	if unpacked.AttachedPart.PartType.Kind != orig.AttachedPart.PartType.Kind {
+		t.Errorf("Kind: got %d, want %d", unpacked.AttachedPart.PartType.Kind, orig.AttachedPart.PartType.Kind)
+	}
+	if n < 11 {
+		t.Errorf("Pack size too small: %d", n)
+	}
+}
