@@ -1061,3 +1061,138 @@ func TestJ25ProductionLevelRoundtrip(t *testing.T) {
 		t.Errorf("Utilization: got %d, want %d", decoded.Utilization, orig.Utilization)
 	}
 }
+
+// =============================================================================
+// Validation & Edge Case Tests
+// =============================================================================
+
+func TestValidateLatitude(t *testing.T) {
+	tests := []struct {
+		lat   float64
+		valid bool
+	}{
+		{0, true},
+		{45.0, true},
+		{-45.0, true},
+		{90.0, true},
+		{-90.0, true},
+		{91.0, false},
+		{-91.0, false},
+		{180.0, false},
+	}
+
+	for _, tc := range tests {
+		err := ValidateLatitude(tc.lat)
+		if (err == nil) != tc.valid {
+			t.Errorf("ValidateLatitude(%f): got error=%v, want valid=%v", tc.lat, err, tc.valid)
+		}
+	}
+}
+
+func TestValidateLongitude(t *testing.T) {
+	tests := []struct {
+		lon   float64
+		valid bool
+	}{
+		{0, true},
+		{90.0, true},
+		{-90.0, true},
+		{180.0, true},
+		{-180.0, true},
+		{181.0, false},
+		{-181.0, false},
+	}
+
+	for _, tc := range tests {
+		err := ValidateLongitude(tc.lon)
+		if (err == nil) != tc.valid {
+			t.Errorf("ValidateLongitude(%f): got error=%v, want valid=%v", tc.lon, err, tc.valid)
+		}
+	}
+}
+
+func TestValidateTrackNumber(t *testing.T) {
+	tests := []struct {
+		tn    uint16
+		valid bool
+	}{
+		{1, true},
+		{100, true},
+		{0xFFFB, true},
+		{0, false},
+		{0xFFFC, false},
+		{0xFFFF, false},
+	}
+
+	for _, tc := range tests {
+		err := ValidateTrackNumber(tc.tn)
+		if (err == nil) != tc.valid {
+			t.Errorf("ValidateTrackNumber(0x%X): got error=%v, want valid=%v", tc.tn, err, tc.valid)
+		}
+	}
+}
+
+func TestJ8Reassembler(t *testing.T) {
+	r := NewJ8Reassembler()
+
+	// Fragment a message
+	sessionID := uint16(1234)
+	totalFragments := uint8(3)
+
+	frag1 := &J8Fragment{SessionID: sessionID, FragmentIndex: 0, TotalFragments: totalFragments, Data: []byte("Hello ")}
+	frag2 := &J8Fragment{SessionID: sessionID, FragmentIndex: 1, TotalFragments: totalFragments, Data: []byte("World ")}
+	frag3 := &J8Fragment{SessionID: sessionID, FragmentIndex: 2, TotalFragments: totalFragments, Data: []byte("!")}
+
+	// Add first two fragments - not complete
+	data, complete := r.AddFragment(frag1)
+	if complete || data != nil {
+		t.Errorf("After 1 frag: complete=%v, data=%v - want nil/false", complete, data)
+	}
+
+	data, complete = r.AddFragment(frag2)
+	if complete || data != nil {
+		t.Errorf("After 2 frag: complete=%v, data=%v - want nil/false", complete, data)
+	}
+
+	// Add third - should complete
+	data, complete = r.AddFragment(frag3)
+	if !complete {
+		t.Errorf("After 3 frag: complete=%v - want true", complete)
+	}
+	if string(data) != "Hello World !" {
+		t.Errorf("Got %q, want %q", string(data), "Hello World !")
+	}
+
+	// Session should be cleared
+	if len(r.fragments) != 0 {
+		t.Errorf("Session not cleared: %v", r.fragments)
+	}
+}
+
+func TestJ31Reassembler(t *testing.T) {
+	r := NewJ31Reassembler()
+
+	transferID := uint16(5678)
+	totalChunks := uint16(2)
+
+	chunk1 := &J31Chunk{TransferID: transferID, ChunkIndex: 0, TotalChunks: totalChunks, Data: []byte("File data part 1 ")}
+	chunk2 := &J31Chunk{TransferID: transferID, ChunkIndex: 1, TotalChunks: totalChunks, Data: []byte("part 2")}
+
+	// Add first chunk
+	complete, _ := r.AddChunk(chunk1)
+	if complete {
+		t.Errorf("After 1 chunk: complete=%v - want false", complete)
+	}
+
+	// Add second - should complete
+	complete, _ = r.AddChunk(chunk2)
+	if !complete {
+		t.Errorf("After 2 chunks: complete=%v - want true", complete)
+	}
+
+	// Session should be cleared
+	chunks := r.GetChunks(transferID)
+	if len(chunks) != 0 {
+		t.Errorf("Session not cleared: %d chunks", len(chunks))
+	}
+}
