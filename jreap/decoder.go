@@ -126,6 +126,27 @@ func (d *Decoder) registerDefaults() {
 		return jseries.UnpackJ30IFF(payload)
 	}
 	d.registry[J31_FileTransfer] = func(payload []byte) interface{} {
+	d.registry[J19_Component] = func(payload []byte) interface{} {
+		return jseries.UnpackJ19Component(payload)
+	}
+	d.registry[J20_AirTrack] = func(payload []byte) interface{} {
+		return jseries.UnpackJ20AirTrack(payload)
+	}
+	d.registry[J21_SurfaceTrack] = func(payload []byte) interface{} {
+		return jseries.UnpackJ21SurfaceTrack(payload)
+	}
+	d.registry[J22_SubsurfaceTrack] = func(payload []byte) interface{} {
+		return jseries.UnpackJ22SubsurfaceTrack(payload)
+	}
+	d.registry[J23_LandTrack] = func(payload []byte) interface{} {
+		return jseries.UnpackJ23LandTrack(payload)
+	}
+	d.registry[J24_ForeignEquipment] = func(payload []byte) interface{} {
+		return jseries.UnpackJ24ForeignEquipment(payload)
+	}
+	d.registry[J25_ProductionLevel] = func(payload []byte) interface{} {
+		return jseries.UnpackJ25ProductionLevel(payload)
+	}
 		return jseries.UnpackJ31FileTransfer(payload)
 	}
 }

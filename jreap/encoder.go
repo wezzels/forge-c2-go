@@ -216,6 +216,41 @@ func (e *Encoder) registerDefaults() {
 		}
 	}
 	e.registry[J31_FileTransfer] = func(msg interface{}, buf []byte) {
+	e.registry[J19_Component] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J19Component); ok {
+			jseries.PackJ19Component(m, buf)
+		}
+	}
+	e.registry[J20_AirTrack] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J20AirTrack); ok {
+			jseries.PackJ20AirTrack(m, buf)
+		}
+	}
+	e.registry[J21_SurfaceTrack] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J21SurfaceTrack); ok {
+			jseries.PackJ21SurfaceTrack(m, buf)
+		}
+	}
+	e.registry[J22_SubsurfaceTrack] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J22SubsurfaceTrack); ok {
+			jseries.PackJ22SubsurfaceTrack(m, buf)
+		}
+	}
+	e.registry[J23_LandTrack] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J23LandTrack); ok {
+			jseries.PackJ23LandTrack(m, buf)
+		}
+	}
+	e.registry[J24_ForeignEquipment] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J24ForeignEquipment); ok {
+			jseries.PackJ24ForeignEquipment(m, buf)
+		}
+	}
+	e.registry[J25_ProductionLevel] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J25ProductionLevel); ok {
+			jseries.PackJ25ProductionLevel(m, buf)
+		}
+	}
 		if m, ok := msg.(*jseries.J31FileTransfer); ok {
 			jseries.PackJ31FileTransfer(m, buf)
 		}

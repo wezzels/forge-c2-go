@@ -814,3 +814,250 @@ func TestJ31FileTransferRoundtrip(t *testing.T) {
 		t.Errorf("Filename: got %s, want %s", unpacked.Filename, orig.Filename)
 	}
 }
+
+// =============================================================================
+// J19-J25 Special Track Type Roundtrip Tests
+// =============================================================================
+
+func TestJ19ComponentRoundtrip(t *testing.T) {
+	orig := &J19Component{
+		TrackNumber:   1234,
+		ComponentID:  5,
+		ComponentType: 3,
+		Latitude:     33.7512,
+		Longitude:    -117.8567,
+		Altitude:     1000,
+		VelocityX:    100.5,
+		VelocityY:    200.3,
+		VelocityZ:    50.0,
+		AccelerationX: 9.8,
+		AccelerationY: 0.1,
+		AccelerationZ: -0.2,
+		EntityType:  0x12345678,
+		Time:        time.Now(),
+	}
+
+	buf := make([]byte, J19PayloadSize)
+	n := PackJ19Component(orig, buf)
+	if n > J19PayloadSize {
+		t.Errorf("Packed size: got %d, want <=%d", n, J19PayloadSize)
+	}
+
+	decoded := UnpackJ19Component(buf[:n])
+
+	if decoded.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", decoded.TrackNumber, orig.TrackNumber)
+	}
+	if decoded.ComponentID != orig.ComponentID {
+		t.Errorf("ComponentID: got %d, want %d", decoded.ComponentID, orig.ComponentID)
+	}
+}
+
+func TestJ20AirTrackRoundtrip(t *testing.T) {
+	orig := &J20AirTrack{
+		TrackNumber:       5678,
+		Time:            time.Now(),
+		Latitude:        34.0522,
+		Longitude:       -118.2437,
+		Altitude:        10000,
+		Speed:           250.0,
+		Heading:         90.0,
+		VerticalVelocity: 50.0,
+		SpeedType:       1,
+		AltitudeType:    2,
+		IFF:             0x15,
+		IFFData:         0x12345678,
+		TrackQuality:   3,
+		ParticipantNumber: 1,
+		ForceType:       2,
+	}
+
+	buf := make([]byte, J20PayloadSize)
+	n := PackJ20AirTrack(orig, buf)
+	if n > J20PayloadSize {
+		t.Errorf("Packed size: got %d, want %d", n, J20PayloadSize)
+	}
+
+	decoded := UnpackJ20AirTrack(buf)
+
+	if decoded.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", decoded.TrackNumber, orig.TrackNumber)
+	}
+	if decoded.SpeedType != orig.SpeedType {
+		t.Errorf("SpeedType: got %d, want %d", decoded.SpeedType, orig.SpeedType)
+	}
+}
+
+func TestJ21SurfaceTrackRoundtrip(t *testing.T) {
+	orig := &J21SurfaceTrack{
+		TrackNumber:        9999,
+		Time:              time.Now(),
+		Latitude:          21.3069,
+		Longitude:         -157.8583,
+		Altitude:          0,
+		Speed:             15.0,
+		Heading:           180.0,
+		CourseOverGround:  175.0,
+		SpeedOverGround:   14.5,
+		TurnRate:          2.5,
+		ShipType:         101,
+		VesselID:         0xDEADBEEF,
+		TrackQuality:     2,
+		ParticipantNumber: 5,
+		ForceType:        1,
+	}
+
+	buf := make([]byte, J21PayloadSize)
+	n := PackJ21SurfaceTrack(orig, buf)
+	if n > J21PayloadSize {
+		t.Errorf("Packed size: got %d, want %d", n, J21PayloadSize)
+	}
+
+	decoded := UnpackJ21SurfaceTrack(buf)
+
+	if decoded.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", decoded.TrackNumber, orig.TrackNumber)
+	}
+	if decoded.ShipType != orig.ShipType {
+		t.Errorf("ShipType: got %d, want %d", decoded.ShipType, orig.ShipType)
+	}
+}
+
+func TestJ22SubsurfaceTrackRoundtrip(t *testing.T) {
+	orig := &J22SubsurfaceTrack{
+		TrackNumber:        8888,
+		Time:              time.Now(),
+		Latitude:          32.7157,
+		Longitude:         -117.1611,
+		Depth:             -100.0,
+		Speed:             10.0,
+		Heading:           270.0,
+		CourseOverGround:  265.0,
+		SpeedOverGround:   9.5,
+		SonarType:        5,
+		DetectionMethod:   2,
+		SubmarineType:    201,
+		VesselID:         0xCAFEBABE,
+		TrackQuality:     3,
+		ParticipantNumber: 7,
+		ForceType:        3,
+	}
+
+	buf := make([]byte, J22PayloadSize)
+	n := PackJ22SubsurfaceTrack(orig, buf)
+	if n > J22PayloadSize {
+		t.Errorf("Packed size: got %d, want %d", n, J22PayloadSize)
+	}
+
+	decoded := UnpackJ22SubsurfaceTrack(buf)
+
+	if decoded.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", decoded.TrackNumber, orig.TrackNumber)
+	}
+	if decoded.Depth != orig.Depth {
+		t.Errorf("Depth: got %f, want %f", decoded.Depth, orig.Depth)
+	}
+}
+
+func TestJ23LandTrackRoundtrip(t *testing.T) {
+	orig := &J23LandTrack{
+		TrackNumber:        7777,
+		Time:              time.Now(),
+		Latitude:          38.9072,
+		Longitude:         -77.0369,
+		Altitude:          20.0,
+		Speed:             20.0,
+		Heading:           45.0,
+		Course:            42.0,
+		VehicleType:      301,
+		VehicleID:        0x12345678,
+		Formation:        1,
+		UnitSize:         3,
+		TrackQuality:     2,
+		ParticipantNumber: 10,
+		ForceType:        1,
+	}
+
+	buf := make([]byte, J23PayloadSize)
+	n := PackJ23LandTrack(orig, buf)
+	if n > J23PayloadSize {
+		t.Errorf("Packed size: got %d, want %d", n, J23PayloadSize)
+	}
+
+	decoded := UnpackJ23LandTrack(buf)
+
+	if decoded.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", decoded.TrackNumber, orig.TrackNumber)
+	}
+	if decoded.VehicleType != orig.VehicleType {
+		t.Errorf("VehicleType: got %d, want %d", decoded.VehicleType, orig.VehicleType)
+	}
+}
+
+func TestJ24ForeignEquipmentRoundtrip(t *testing.T) {
+	orig := &J24ForeignEquipment{
+		TrackNumber:        6666,
+		Time:              time.Now(),
+		EquipmentType:     7,
+		Nation:            826, // UK
+		EquipmentCode:     1234,
+		AdditionalInfo:    0xABCDEF00,
+		Latitude:          51.5074,
+		Longitude:         -0.1278,
+		Altitude:          50.0,
+		TrackQuality:     2,
+		ParticipantNumber: 15,
+		ForceType:        4,
+	}
+
+	buf := make([]byte, J24PayloadSize)
+	n := PackJ24ForeignEquipment(orig, buf)
+	if n > J24PayloadSize {
+		t.Errorf("Packed size: got %d, want %d", n, J24PayloadSize)
+	}
+
+	decoded := UnpackJ24ForeignEquipment(buf)
+
+	if decoded.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", decoded.TrackNumber, orig.TrackNumber)
+	}
+	if decoded.Nation != orig.Nation {
+		t.Errorf("Nation: got %d, want %d", decoded.Nation, orig.Nation)
+	}
+}
+
+func TestJ25ProductionLevelRoundtrip(t *testing.T) {
+	orig := &J25ProductionLevel{
+		TrackNumber:        5555,
+		Time:              time.Now(),
+		SystemType:        3,
+		ProductionType:    1,
+		CurrentLevel:      50000,
+		MaximumLevel:      100000,
+		Utilization:       50,
+		QueueDepth:        100,
+		Latency:           25,
+		Throughput:        2000,
+		TrackQuality:     1,
+		ParticipantNumber: 20,
+		ForceType:        1,
+	}
+
+	buf := make([]byte, J25PayloadSize)
+	n := PackJ25ProductionLevel(orig, buf)
+	if n > J25PayloadSize {
+		t.Errorf("Packed size: got %d, want %d", n, J25PayloadSize)
+	}
+
+	decoded := UnpackJ25ProductionLevel(buf)
+
+	if decoded.TrackNumber != orig.TrackNumber {
+		t.Errorf("TrackNumber: got %d, want %d", decoded.TrackNumber, orig.TrackNumber)
+	}
+	if decoded.CurrentLevel != orig.CurrentLevel {
+		t.Errorf("CurrentLevel: got %d, want %d", decoded.CurrentLevel, orig.CurrentLevel)
+	}
+	if decoded.Utilization != orig.Utilization {
+		t.Errorf("Utilization: got %d, want %d", decoded.Utilization, orig.Utilization)
+	}
+}
