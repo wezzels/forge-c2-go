@@ -297,18 +297,18 @@ go test ./jreap/...                            # All packages pass
 - [ ] 3.4.11 Add J0/J1 integration tests
 - [ ] 3.4.12 Document state machine in `docs/NETWORK-MGMT.md`
 
-### 3.5 Remaining Roundtrip Tests
-- [ ] 3.5.1 J2 Surveillance roundtrip (fix field offset bug first)
-- [ ] 3.5.2 J8 Radio roundtrip at 3 lengths (0, 128, 256)
-- [ ] 3.5.3 J14 ProcessSpec roundtrip
-- [ ] 3.5.4 J15 Command roundtrip
-- [ ] 3.5.5 J16 Acknowledge roundtrip
-- [ ] 3.5.6 J17 InitiateTransfer roundtrip
-- [ ] 3.5.7 J18 SpaceTrack roundtrip
-- [ ] 3.5.8 J28 Satellite OPIR roundtrip
-- [ ] 3.5.9 J29 Symbology roundtrip
-- [ ] 3.5.10 J30 IFF roundtrip
-- [ ] 3.5.11 J31 FileTransfer roundtrip (variable + submessage chain)
+### 3.5 Roundtrip Tests (COMPLETE)
+- [x] 3.5.1 J2 Surveillance roundtrip (fix field offset bug first)
+- [x] 3.5.2 J8 Radio roundtrip at 3 lengths (0, 128, 256)
+- [x] 3.5.3 J14 ProcessSpec roundtrip
+- [x] 3.5.4 J15 Command roundtrip
+- [x] 3.5.5 J16 Acknowledge roundtrip
+- [x] 3.5.6 J17 InitiateTransfer roundtrip
+- [x] 3.5.7 J18 SpaceTrack roundtrip
+- [x] 3.5.8 J28 Satellite OPIR roundtrip
+- [x] 3.5.9 J29 Symbology roundtrip
+- [x] 3.5.10 J30 IFF roundtrip
+- [x] 3.5.11 J31 FileTransfer roundtrip (variable + submessage chain)
 
 ### 3.6 Internal Handlers Integration
 - [ ] 3.6.1 Wire encoder into `track_mgr_handler.go` (output path)
