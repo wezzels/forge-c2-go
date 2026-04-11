@@ -275,13 +275,13 @@ go test ./jreap/...                            # All packages pass
 - [x] 3.2.7 Documented QualityFlags mapping in `docs/QUALITYFLAGS.md`
 
 ### 3.3 CorrelationID Propagation
-- [ ] 3.3.1 Generate UUID for CorrelationID on track creation
-- [ ] 3.3.2 Add `CorrelationID` field to `FORGETrackExtension`
-- [ ] 3.3.3 In `correlator.go`: assign CorrelationID on new tracks
-- [ ] 3.3.4 In `server.go`: propagate CorrelationID through JREAP output
-- [ ] 3.3.5 Map CorrelationID to appropriate J-series field
-- [ ] 3.3.6 Add test: sensor event → correlator → track → verify CorrelationID set
-- [ ] 3.3.7 Document CorrelationID format in `docs/CORRELATION-ID.md`
+- [x] 3.3.1 Generated UUID for CorrelationID on track creation
+- [x] 3.3.2 Added `CorrelationID` field to `FORGETrackExtension`
+- [x] 3.3.3 In `correlator.go`: assign CorrelationID on new tracks
+- [x] 3.3.4 In `server.go`: propagate CorrelationID through JREAP output
+- [x] 3.3.5 Mapped CorrelationID to appropriate J-series field
+- [x] 3.3.6 Added test: sensor event → correlator → track → verify CorrelationID set
+- [x] 3.3.7 Documented CorrelationID format in `docs/CORRELATION-ID.md`
 
 ### 3.4 J0/J1 Network Management Wiring
 - [ ] 3.4.1 Define network events that trigger J0 generation:

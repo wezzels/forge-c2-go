@@ -1,6 +1,7 @@
 package jreap
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -143,7 +144,7 @@ func TestEncodeJ28Roundtrip(t *testing.T) {
 
 	j28Decoded, ok := decoded.(*jseries.J28SpaceTrack)
 	if !ok {
-		t.Fatalf("Decoded type is not *J28SpaceTrack")
+		t.Fatalf("Decoded type is not *jseries.J28SpaceTrack")
 	}
 
 	if j28Decoded.TrackNumber != j28.TrackNumber {
@@ -188,6 +189,62 @@ func TestQualityFlagsPipeline(t *testing.T) {
 				t.Error("Encoded bytes is nil")
 			}
 		})
+	}
+}
+
+// TestCorrelationIDPropagation tests that CorrelationID is preserved through encoding
+func TestCorrelationIDPropagation(t *testing.T) {
+	enc := NewEncoder("TEST", "ENC")
+
+	tests := []struct {
+		name   string
+		corrID string
+	}{
+		{"SBIRS-GEO-1", "SBIRS-GEO-1-0001-1744354800000"},
+		{"NG-OPIR-2", "NG-OPIR-2-1234-1744354801000"},
+		{"FUSED", "FUSED-9999-1744354802000"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			meta := &mdpa.MDPAMetadata{
+				ProcessingNodeID: "TEST",
+				CorrelationID:   tt.corrID,
+				QualityFlags:     mdpa.QualityGood,
+				Classification:   "UNCLASSIFIED",
+			}
+
+			track := &testTrack{
+				id: "TRK-001", trackNum: 1234,
+				lat: 33.7512, lon: -117.8567, alt: 10000,
+				speed: 250.0, heading: 90.0, threat: 1,
+				status: "ACTIVE", lastUpdate: time.Now(),
+			}
+
+			encoded, err := enc.EncodeTrackWithMetadata(track, meta)
+			if err != nil {
+				t.Fatalf("EncodeTrackWithMetadata failed: %v", err)
+			}
+
+			if encoded.Metadata == nil {
+				t.Fatal("Metadata is nil")
+			}
+			if encoded.Metadata.CorrelationID != tt.corrID {
+				t.Errorf("CorrelationID: got %q, want %q", encoded.Metadata.CorrelationID, tt.corrID)
+			}
+		})
+	}
+}
+
+// TestCorrelationIDFormat tests the CorrelationID format
+func TestCorrelationIDFormat(t *testing.T) {
+	satID := "SBIRS-GEO-1"
+	trackNum := uint16(1234)
+	ts := time.UnixMilli(1744354800000)
+
+	expected := fmt.Sprintf("%s-%04d-%d", satID, trackNum, ts.UnixMilli())
+	if expected != "SBIRS-GEO-1-1234-1744354800000" {
+		t.Errorf("CorrelationID format: got %q", expected)
 	}
 }
 
