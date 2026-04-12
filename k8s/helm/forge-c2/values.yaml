@@ -1,0 +1,32 @@
+replicaCount: 2
+
+image:
+  repository: forge-c2
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  ports:
+    http: 80
+    metrics: 9090
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+config:
+  logLevel: info
+  disExerciseId: 1
+  hlaRtiHost: localhost:13988
+  federationName: FORGE-Federation
