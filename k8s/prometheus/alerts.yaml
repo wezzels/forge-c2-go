@@ -1,0 +1,15 @@
+groups:
+- name: forge-c2
+  rules:
+  - alert: HighErrorRate
+    expr: rate(forge_errors_total[5m]) > 0.01
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: High error rate in FORGE-C2
+  - alert: SlowEncoding
+    expr: histogram_quantile(0.95, rate(forge_pdu_encode_duration_seconds_bucket[5m])) > 0.1
+    for: 5m
+    annotations:
+      summary: PDU encoding latency above 100ms

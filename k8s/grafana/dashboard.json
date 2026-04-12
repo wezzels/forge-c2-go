@@ -1,0 +1,35 @@
+{
+  "dashboard": {
+    "title": "FORGE-C2",
+    "panels": [
+      {
+        "title": "PDU Throughput",
+        "type": "graph",
+        "targets": [
+          {"expr": "rate(forge_pdu_total[5m])", "legendFormat": "{{pdu_type}}"}
+        ]
+      },
+      {
+        "title": "Encode Latency",
+        "type": "graph",
+        "targets": [
+          {"expr": "histogram_quantile(0.95, rate(forge_pdu_encode_duration_seconds_bucket[5m]))", "legendFormat": "p95"}
+        ]
+      },
+      {
+        "title": "Active Entities",
+        "type": "stat",
+        "targets": [
+          {"expr": "forge_active_entities", "legendFormat": "Entities"}
+        ]
+      },
+      {
+        "title": "BMDS Tracks",
+        "type": "stat",
+        "targets": [
+          {"expr": "forge_bmds_tracks", "legendFormat": "Tracks"}
+        ]
+      }
+    ]
+  }
+}
