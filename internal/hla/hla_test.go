@@ -358,3 +358,67 @@ func TestDDMRoutingSpace(t *testing.T) {
 		t.Errorf("Dimensions: got %d, want 2", len(rs.Dimensions))
 	}
 }
+
+func TestFOMParser(t *testing.T) {
+	// Sample FOM XML (simplified IEEE 1516 format)
+	fomXML := `<?xml version="1.0"?>
+<ObjectModel xmlns="http://standards.ieee.org/IEEE1516-2010">
+  <objectClass name="HLAobjectRoot"/>
+  <objectClass name="HLAobjectRoot.Platform">
+    <attribute name="Name" dataType="HLAunicodeString"/>
+    <attribute name="Position" dataType="WorldCoordinate"/>
+  </objectClass>
+  <interactionClass name="HLAinteractionRoot"/>
+  <interactionClass name="HLAinteractionRoot.UpdateRate">
+    <parameter name="Rate" dataType="HLAfloat32BE"/>
+  </interactionClass>
+</ObjectModel>`
+
+	parser := NewFOMParser()
+	mod, err := parser.Parse([]byte(fomXML))
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	// Verify object class parsed
+	platform := mod.GetObjectClass("Platform")
+	if platform == nil {
+		t.Fatal("Platform class should be found")
+	}
+	if len(platform.Attributes) != 2 {
+		t.Errorf("Platform should have 2 attributes, got %d", len(platform.Attributes))
+	}
+
+	// Verify interaction class parsed
+	updateRate := mod.GetInteractionClass("UpdateRate")
+	if updateRate == nil {
+		t.Fatal("UpdateRate interaction should be found")
+	}
+	if len(updateRate.Parameters) != 1 {
+		t.Errorf("UpdateRate should have 1 parameter, got %d", len(updateRate.Parameters))
+	}
+}
+
+func TestFOMParserObjectAndInteraction(t *testing.T) {
+	// Test parsing object and interaction classes
+	parser := NewFOMParser()
+	
+	fomXML := `<?xml version="1.0"?>
+<ObjectModel xmlns="http://standards.ieee.org/IEEE1516-2010">
+  <objectClass name="TestClass"/>
+  <interactionClass name="TestInteraction"/>
+</ObjectModel>`
+
+	mod, err := parser.Parse([]byte(fomXML))
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	if len(mod.ObjectClasses) != 1 {
+		t.Errorf("Should have 1 object class, got %d", len(mod.ObjectClasses))
+	}
+
+	if len(mod.InteractionClasses) != 1 {
+		t.Errorf("Should have 1 interaction class, got %d", len(mod.InteractionClasses))
+	}
+}
