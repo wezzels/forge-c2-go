@@ -523,3 +523,86 @@ func TestAcknowledgePDURoundtrip(t *testing.T) {
 		t.Errorf("ResponseFlag: got %d, want %d", unpacked.ResponseFlag, pdu.ResponseFlag)
 	}
 }
+
+func TestEnumerations(t *testing.T) {
+	// Test DomainToString
+	if DomainToString(DomainLand) != "Land" {
+		t.Error("DomainLand should be Land")
+	}
+	if DomainToString(DomainAir) != "Air" {
+		t.Error("DomainAir should be Air")
+	}
+	if DomainToString(DomainSurface) != "Surface" {
+		t.Error("DomainSurface should be Surface")
+	}
+	if DomainToString(DomainSubsurface) != "Subsurface" {
+		t.Error("DomainSubsurface should be Subsurface")
+	}
+	if DomainToString(DomainSpace) != "Space" {
+		t.Error("DomainSpace should be Space")
+	}
+
+	// Test DamageStatusToString
+	if DamageStatusToString(DamageDestroyed) != "Destroyed" {
+		t.Error("DamageDestroyed should be Destroyed")
+	}
+	if DamageStatusToString(DamageLight) != "Light Damage" {
+		t.Error("DamageLight should be Light Damage")
+	}
+
+	// Test EntityKind constants
+	if EntityKindPlatform != 0 {
+		t.Errorf("EntityKindPlatform: got %d, want 0", EntityKindPlatform)
+	}
+	if EntityKindMunition != 1 {
+		t.Errorf("EntityKindMunition: got %d, want 1", EntityKindMunition)
+	}
+
+	// Test Domain constants
+	if DomainLand != 1 {
+		t.Errorf("DomainLand: got %d, want 1", DomainLand)
+	}
+	if DomainAir != 2 {
+		t.Errorf("DomainAir: got %d, want 2", DomainAir)
+	}
+
+	// Test Country codes
+	if CountryUSA != 840 {
+		t.Errorf("CountryUSA: got %d, want 840", CountryUSA)
+	}
+	if CountryRussia != 643 {
+		t.Errorf("CountryRussia: got %d, want 643", CountryRussia)
+	}
+}
+
+func TestCommonEntityTypeLookup(t *testing.T) {
+	et, ok := GetEntityType("M1_Abrams")
+	if !ok {
+		t.Fatal("M1_Abrams should be found")
+	}
+	if et.Kind != 0 || et.Domain != 1 || et.Country != 840 {
+		t.Error("M1_Abrams type mismatch")
+	}
+
+	et, ok = GetEntityType("F-16")
+	if !ok {
+		t.Fatal("F-16 should be found")
+	}
+	if et.Domain != 2 {
+		t.Error("F-16 should be Air domain")
+	}
+
+	et, ok = GetEntityType("Arleigh_Burke")
+	if !ok {
+		t.Fatal("Arleigh_Burke should be found")
+	}
+	if et.Domain != 3 {
+		t.Error("Arleigh_Burke should be Surface domain")
+	}
+
+	// Non-existent
+	_, ok = GetEntityType("NonExistentPlatform")
+	if ok {
+		t.Error("NonExistent should not be found")
+	}
+}
