@@ -4,11 +4,18 @@ package dis
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"time"
 )
 
+// DIS errors
+var (
+	ErrBufferTooSmall = errors.New("buffer too small")
+	ErrInvalidPDU    = errors.New("invalid PDU data")
+	ErrInvalidHeader = errors.New("invalid PDU header")
+)
 // DIS Protocol Version
 const DISProtocolVersion uint16 = 7
 
