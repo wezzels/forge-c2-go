@@ -411,6 +411,8 @@ type FederationExecutionData struct {
 	IsAnnounced       bool
 	IsConstrained     bool
 	IsRegulating      bool
+	SyncPoints       map[string]*SynchronizationPoint
+	SaveStatus       *SaveStatus
 }
 
 // SynchronizationPoint tracks sync point state
@@ -663,6 +665,92 @@ func (r *RTIGateway) ResignFederation(handle uint32, action ResignAction) error 
 		}
 	}
 	return fmt.Errorf("federate handle %d not found", handle)
+}
+
+// =============================================================================
+// HLA Synchronization Point Management (IEEE 1516)
+// =============================================================================
+
+// RegisterFederationSynchronizationPoint registers a sync point
+func (r *RTIGateway) RegisterFederationSynchronizationPoint(label string, tag []byte) error {
+	for _, exec := range r.federations {
+		if exec.SyncPoints == nil {
+			exec.SyncPoints = make(map[string]*SynchronizationPoint)
+		}
+		exec.SyncPoints[label] = &SynchronizationPoint{
+			Label: label,
+			Tag:   tag,
+		}
+	}
+	return nil
+}
+
+// SynchronizationPointAchieved indicates sync point reached
+func (r *RTIGateway) SynchronizationPointAchieved(label string) error {
+	for _, exec := range r.federations {
+		if sp, ok := exec.SyncPoints[label]; ok {
+			sp.State = SyncStateAchieved
+			return nil
+		}
+	}
+	return fmt.Errorf("synchronization point %s not found", label)
+}
+
+// RequestFederationSave requests a save
+func (r *RTIGateway) RequestFederationSave(label string, timeStamp time.Time) error {
+	for _, exec := range r.federations {
+		exec.SaveStatus = &SaveStatus{
+			Label:      label,
+			Time:       timeStamp,
+			Initiating: true,
+			InProgress: true,
+		}
+	}
+	return nil
+}
+
+// QueryFederationSaveStatus queries save status
+func (r *RTIGateway) QueryFederationSaveStatus() (*SaveStatus, error) {
+	for _, exec := range r.federations {
+		if exec.SaveStatus != nil {
+			return exec.SaveStatus, nil
+		}
+	}
+	return nil, nil
+}
+
+// SynchronizationPointRegistrationSucceeded sync point registered
+func (r *RTIGateway) SynchronizationPointRegistrationSucceeded(label string) {
+	// No-op stub for callback
+}
+
+// SynchronizationPointRegistrationFailed sync point failed
+func (r *RTIGateway) SynchronizationPointRegistrationFailed(label string) {
+	// No-op stub for callback
+}
+
+// AnnounceSynchronizationPoint sync point announced
+func (r *RTIGateway) AnnounceSynchronizationPoint(label string, tag []byte) {
+	for _, exec := range r.federations {
+		if exec.SyncPoints == nil {
+			exec.SyncPoints = make(map[string]*SynchronizationPoint)
+		}
+		exec.SyncPoints[label] = &SynchronizationPoint{
+			Label: label,
+			Tag:   tag,
+			State: SyncStateAnnounced,
+		}
+	}
+}
+
+// RequestFederationRestore requests a restore
+func (r *RTIGateway) RequestFederationRestore(label string) error {
+	for _, exec := range r.federations {
+		exec.SaveStatus = &SaveStatus{
+			Label: label,
+		}
+	}
+	return nil
 }
 
 // =============================================================================
