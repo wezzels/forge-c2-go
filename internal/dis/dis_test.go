@@ -318,3 +318,208 @@ func TestAttachedPartPackUnpack(t *testing.T) {
 		t.Errorf("Pack size too small: %d", n)
 	}
 }
+
+func TestSignalPDURoundtrip(t *testing.T) {
+	pdu := &DISSignalPDU{
+		Header: DISHeader{
+			ProtocolVersion: 7,
+			ExerciseID: 1,
+			PDUType:     25,
+			Family:      0,
+		},
+		EntityID:        EntityID{SiteNumber: 1, ApplicationNumber: 2, EntityNumber: 3},
+		EmitterKind:     1,
+		EmitterNumber:   5,
+		ISSCC:           0x1234,
+		ISSRC:           0x5678,
+		CCIR:            100,
+		Priority:        2,
+		PDUStatus:       0,
+		Padding1:        0,
+		ProtocolMode:    1,
+		SampleRateHz:    8000,
+		SampleCount:     160,
+		CompressedData:  []byte{0x01, 0x02, 0x03, 0x04},
+	}
+
+	buf := make([]byte, 256)
+	n := PackDISSignalPDU(pdu, buf)
+	if n == 0 {
+		t.Fatal("Pack returned 0")
+	}
+
+	unpacked := UnpackDISSignalPDU(buf)
+	if unpacked == nil {
+		t.Fatal("Unpack returned nil")
+	}
+
+	if unpacked.EmitterKind != pdu.EmitterKind {
+		t.Errorf("EmitterKind: got %d, want %d", unpacked.EmitterKind, pdu.EmitterKind)
+	}
+	if unpacked.SampleRateHz != pdu.SampleRateHz {
+		t.Errorf("SampleRateHz: got %d, want %d", unpacked.SampleRateHz, pdu.SampleRateHz)
+	}
+	if unpacked.EntityID.EntityNumber != pdu.EntityID.EntityNumber {
+		t.Errorf("EntityID: got %d, want %d", unpacked.EntityID.EntityNumber, pdu.EntityID.EntityNumber)
+	}
+}
+
+func TestTransmitterPDURoundtrip(t *testing.T) {
+	pdu := &DISTransmitterPDU{
+		Header: DISHeader{
+			ProtocolVersion: 7,
+			ExerciseID: 1,
+			PDUType:     26,
+			Family:      0,
+		},
+		EntityID:            EntityID{SiteNumber: 1, ApplicationNumber: 2, EntityNumber: 3},
+		RadioID:            10,
+		RadioKind:          2,
+		PrimaryMode:        1,
+		SecondaryMode:      0,
+		Padding1:           0,
+		AntennaLocation:    EntityID{SiteNumber: 0, ApplicationNumber: 0, EntityNumber: 0},
+		AntennaPatternType: 0,
+		Padding2:           0,
+		Frequency:          2400000000,
+		Bandwidth:          25000,
+		SpreadSpectrum:     1,
+		JQJ:                0,
+		KEK:                0,
+		ISSRC:               0,
+		MajorChannel:       1,
+		MinorChannel:       0,
+	}
+
+	buf := make([]byte, 256)
+	n := PackDISTransmitterPDU(pdu, buf)
+	if n == 0 {
+		t.Fatal("Pack returned 0")
+	}
+
+	unpacked := UnpackDISTransmitterPDU(buf)
+	if unpacked == nil {
+		t.Fatal("Unpack returned nil")
+	}
+
+	if unpacked.RadioID != pdu.RadioID {
+		t.Errorf("RadioID: got %d, want %d", unpacked.RadioID, pdu.RadioID)
+	}
+	if unpacked.Frequency != pdu.Frequency {
+		t.Errorf("Frequency: got %d, want %d", unpacked.Frequency, pdu.Frequency)
+	}
+	if unpacked.RadioKind != pdu.RadioKind {
+		t.Errorf("RadioKind: got %d, want %d", unpacked.RadioKind, pdu.RadioKind)
+	}
+}
+
+func TestReceiverPDURoundtrip(t *testing.T) {
+	pdu := &DISReceiverPDU{
+		Header: DISHeader{
+			ProtocolVersion: 7,
+			ExerciseID: 1,
+			PDUType:     27,
+			Family:      0,
+		},
+		EntityID:             EntityID{SiteNumber: 1, ApplicationNumber: 2, EntityNumber: 3},
+		RadioID:             10,
+		ReceiverState:       1,
+		Padding1:            0,
+		Padding2:            0,
+		Padding3:            0,
+		ISSRC:                0,
+		TransmitterEntityID: EntityID{SiteNumber: 4, ApplicationNumber: 5, EntityNumber: 6},
+		TransmitterRadioID:  11,
+		TransmitterSignal:   -45,
+	}
+
+	buf := make([]byte, 256)
+	n := PackDISReceiverPDU(pdu, buf)
+	if n == 0 {
+		t.Fatal("Pack returned 0")
+	}
+
+	unpacked := UnpackDISReceiverPDU(buf)
+	if unpacked == nil {
+		t.Fatal("Unpack returned nil")
+	}
+
+	if unpacked.RadioID != pdu.RadioID {
+		t.Errorf("RadioID: got %d, want %d", unpacked.RadioID, pdu.RadioID)
+	}
+	if unpacked.ReceiverState != pdu.ReceiverState {
+		t.Errorf("ReceiverState: got %d, want %d", unpacked.ReceiverState, pdu.ReceiverState)
+	}
+	if unpacked.TransmitterSignal != pdu.TransmitterSignal {
+		t.Errorf("TransmitterSignal: got %d, want %d", unpacked.TransmitterSignal, pdu.TransmitterSignal)
+	}
+}
+
+func TestCollisionPDURoundtrip(t *testing.T) {
+	pdu := &DISCollisionPDU{
+		Header: DISHeader{
+			ProtocolVersion: 7,
+			ExerciseID: 1,
+			PDUType:     4,
+			Family:      0,
+		},
+		EntityID:         EntityID{SiteNumber: 1, ApplicationNumber: 2, EntityNumber: 3},
+		CollisionType:    1,
+		TargetEntityID:   EntityID{SiteNumber: 4, ApplicationNumber: 5, EntityNumber: 6},
+		Location:         Vector3Double{X: 100.5, Y: 200.5, Z: 300.5},
+		CollisionMass:    5000.0,
+		CollisionVelocity: Vector3Float{X: 10.0, Y: 0, Z: 0},
+	}
+
+	buf := make([]byte, 256)
+	n := PackDISCollisionPDU(pdu, buf)
+	if n == 0 {
+		t.Fatal("Pack returned 0")
+	}
+
+	unpacked := UnpackDISCollisionPDU(buf)
+	if unpacked == nil {
+		t.Fatal("Unpack returned nil")
+	}
+
+	if unpacked.CollisionType != pdu.CollisionType {
+		t.Errorf("CollisionType: got %d, want %d", unpacked.CollisionType, pdu.CollisionType)
+	}
+	if unpacked.CollisionMass != pdu.CollisionMass {
+		t.Errorf("CollisionMass: got %f, want %f", unpacked.CollisionMass, pdu.CollisionMass)
+	}
+}
+
+func TestAcknowledgePDURoundtrip(t *testing.T) {
+	pdu := &DISAcknowledgePDU{
+		Header: DISHeader{
+			ProtocolVersion: 7,
+			ExerciseID: 1,
+			PDUType:     16,
+			Family:      0,
+		},
+		OriginatingEntityID: EntityID{SiteNumber: 1, ApplicationNumber: 2, EntityNumber: 3},
+		ReceivingEntityID:   EntityID{SiteNumber: 4, ApplicationNumber: 5, EntityNumber: 6},
+		AcknowledgeFlag:     1,
+		ResponseFlag:       2,
+		EventID:            EventID{SiteNumber: 1, ApplicationNumber: 2, EventNumber: 3},
+	}
+
+	buf := make([]byte, 256)
+	n := PackDISAcknowledgePDU(pdu, buf)
+	if n == 0 {
+		t.Fatal("Pack returned 0")
+	}
+
+	unpacked := UnpackDISAcknowledgePDU(buf)
+	if unpacked == nil {
+		t.Fatal("Unpack returned nil")
+	}
+
+	if unpacked.AcknowledgeFlag != pdu.AcknowledgeFlag {
+		t.Errorf("AcknowledgeFlag: got %d, want %d", unpacked.AcknowledgeFlag, pdu.AcknowledgeFlag)
+	}
+	if unpacked.ResponseFlag != pdu.ResponseFlag {
+		t.Errorf("ResponseFlag: got %d, want %d", unpacked.ResponseFlag, pdu.ResponseFlag)
+	}
+}
