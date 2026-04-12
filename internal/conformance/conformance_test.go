@@ -371,3 +371,94 @@ func TestFOMParserConformance(t *testing.T) {
 		t.Errorf("InteractionClasses: got %d, want 1", len(mod.InteractionClasses))
 	}
 }
+
+// =============================================================================
+// Phase 7.2: Interoperability Tests
+// =============================================================================
+
+func TestDIStoHLAGateway(t *testing.T) {
+	disPdu := dis.NewEntityStatePDU(1, 2, 3)
+	disPdu.SetLocation(33.7512, -117.8567, 10000)
+
+	disBuf := make([]byte, 1024)
+	dis.PackEntityStatePDU(disPdu, disBuf)
+	unpackedDIS := dis.UnpackEntityStatePDU(disBuf)
+
+	site, app, entity, lat, lon, alt, _, _, _, err := dis.DISToJSeries(unpackedDIS)
+	if err != nil {
+		t.Fatalf("DISToJSeries failed: %v", err)
+	}
+
+	hlaEntity := hla.NewEntity(site, app, entity)
+	hlaEntity.SetLocation(lat, lon, alt)
+
+	if hlaEntity.EntityID.SiteNumber != 1 {
+		t.Errorf("SiteNumber: got %d, want 1", hlaEntity.EntityID.SiteNumber)
+	}
+}
+
+func TestHLAToDISGateway(t *testing.T) {
+	hlaEntity := hla.NewEntity(10, 20, 30)
+	hlaEntity.SetLocation(1000.5, 2000.5, 500.0)
+
+	lat := hlaEntity.Position.X / 111000.0
+	lon := hlaEntity.Position.Y / 111000.0
+
+	disPdu := dis.JSeriesToDIS(100, lat, lon, 500, 90.0, 100.0, 1, 10, 20)
+	if disPdu == nil {
+		t.Fatal("JSeriesToDIS returned nil")
+	}
+}
+
+func TestEndToEndDISRoundtrip(t *testing.T) {
+	pdu := dis.NewEntityStatePDU(1, 2, 3)
+	pdu.SetLocation(45.0, -90.0, 5000)
+
+	buf := make([]byte, 1024)
+	dis.PackEntityStatePDU(pdu, buf)
+
+	decoded := dis.UnpackEntityStatePDU(buf)
+
+	if decoded.SiteNumber != pdu.SiteNumber {
+		t.Errorf("SiteNumber: got %d, want %d", decoded.SiteNumber, pdu.SiteNumber)
+	}
+}
+
+func TestHLATimeInterop(t *testing.T) {
+	tm := hla.NewTimeManager()
+
+	if err := tm.EnableTimeRegulation(100); err != nil {
+		t.Errorf("EnableTimeRegulation failed: %v", err)
+	}
+
+	if err := tm.EnableTimeConstrained(); err != nil {
+		t.Errorf("EnableTimeConstrained failed: %v", err)
+	}
+}
+
+func TestDISFireToEngagement(t *testing.T) {
+	firePdu := dis.NewFirePDU(1, 1, 1)
+
+	target, firing, munition, err := dis.DISFireToEngagement(firePdu)
+	if err != nil {
+		t.Fatalf("DISFireToEngagement failed: %v", err)
+	}
+
+	_ = target
+	_ = firing
+	_ = munition
+}
+
+func TestDISDetonationToResult(t *testing.T) {
+	detPdu := dis.NewDetonationPDU(1, 1, 1)
+
+	target, lat, lon, alt, err := dis.DISDetonationToResult(detPdu)
+	if err != nil {
+		t.Fatalf("DISDetonationToResult failed: %v", err)
+	}
+
+	_ = target
+	_ = lat
+	_ = lon
+	_ = alt
+}
