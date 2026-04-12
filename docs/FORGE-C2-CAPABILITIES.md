@@ -2,7 +2,7 @@
 
 **Version:** 2026-04-11  
 **Status:** 80% Implementation Complete  
-**Protocols:** JREAP (98%), DIS (90%), HLA (75%), TENA (55%)
+**Protocols:** JREAP (98%), DIS (92%), HLA (75%), TENA (55%)
 
 ---
 
