@@ -6,6 +6,7 @@ import (
 	"forge-c2/internal/hla"
 	"forge-c2/internal/tena"
 	"testing"
+	"time"
 )
 
 // TestDIStoHLAGateway tests DIS Entity State PDU to HLA Entity conversion.
@@ -207,4 +208,112 @@ func packDiscovery(d *tena.TENADiscovery, buf []byte) int {
 	d.Header.MessageType = tena.MessageTypeDiscovery
 	tena.PackTENAObjectHeader(&d.Header, buf)
 	return tena.TENAObjectHeaderSize
+}
+
+func TestSequenceNumberTracker(t *testing.T) {
+	tracker := NewSequenceNumberTracker()
+
+	// First message should pass
+	if !tracker.CheckAndUpdate(1, 1) {
+		t.Error("First message should not be duplicate")
+	}
+
+	// Same sequence should fail
+	if tracker.CheckAndUpdate(1, 1) {
+		t.Error("Same sequence should be duplicate")
+	}
+
+	// Lower sequence should fail
+	if tracker.CheckAndUpdate(1, 0) {
+		t.Error("Lower sequence should be duplicate")
+	}
+
+	// Higher sequence should pass
+	if !tracker.CheckAndUpdate(1, 2) {
+		t.Error("Higher sequence should not be duplicate")
+	}
+
+	// New participant starts fresh
+	if !tracker.CheckAndUpdate(2, 1) {
+		t.Error("New participant should start fresh")
+	}
+
+	t.Logf("SequenceNumberTracker: OK")
+}
+
+func TestTrackNumberAllocator(t *testing.T) {
+	alloc := NewTrackNumberAllocator()
+
+	// Allocate some numbers
+	n1 := alloc.Allocate()
+	if n1 == 0 {
+		t.Error("Should allocate track number")
+	}
+
+	n2 := alloc.Allocate()
+	if n2 == n1 {
+		t.Error("Different numbers should be allocated")
+	}
+
+	// Check allocated
+	if !alloc.IsAllocated(n1) {
+		t.Error("Track should be allocated")
+	}
+
+	// Release and reallocate
+	alloc.Release(n1)
+	if alloc.IsAllocated(n1) {
+		t.Error("Track should be released")
+	}
+
+	n3 := alloc.Allocate()
+	if n3 == 0 {
+		t.Error("first available track (wrapping behavior)")
+	}
+
+	t.Logf("TrackNumberAllocator: n1=%d, n2=%d, n3=%d", n1, n2, n3)
+}
+
+func TestParticipantRegistry(t *testing.T) {
+	reg := NewParticipantRegistry()
+
+	// Add member
+	reg.AddNetworkMember(1, "Federate1", "192.168.1.1")
+
+	if !reg.ValidateParticipant(1) {
+		t.Error("Participant should be valid")
+	}
+
+	if reg.ValidateParticipant(2) {
+		t.Error("Unknown participant should be invalid")
+	}
+
+	// Remove member
+	reg.RemoveNetworkMember(1)
+	if reg.ValidateParticipant(1) {
+		t.Error("Removed participant should be invalid")
+	}
+
+	t.Logf("ParticipantRegistry: OK")
+}
+
+func TestRateLimiter(t *testing.T) {
+	limiter := NewRateLimiter()
+
+	// Set limit: 5 messages per second
+	limiter.SetLimit(1, 5, time.Second)
+
+	// First 5 should pass
+	for i := 0; i < 5; i++ {
+		if !limiter.CheckLimit(1) {
+			t.Errorf("Message %d should be within limit", i+1)
+		}
+	}
+
+	// 6th should fail
+	if limiter.CheckLimit(1) {
+		t.Error("6th message should exceed limit")
+	}
+
+	t.Logf("RateLimiter: OK")
 }
