@@ -176,3 +176,58 @@ func TestChangeAttributeTypes(t *testing.T) {
 
 	t.Log("ChangeAttributeTypes: transport=1, order=2")
 }
+
+func TestOwnershipCallbacks(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	// Test ownership callbacks
+	err := gateway.AttributeOwnershipUnavailableCallback(1, []uint32{1, 2, 3})
+	if err != nil {
+		t.Fatalf("AttributeOwnershipUnavailableCallback failed: %v", err)
+	}
+
+	err = gateway.AttributeOwnershipDivestitureNotificationCallback(1, []uint32{1})
+	if err != nil {
+		t.Fatalf("AttributeOwnershipDivestitureNotificationCallback failed: %v", err)
+	}
+
+	err = gateway.ConfirmAttributeOwnershipAcquisitionCallback(1, []uint32{1}, []byte("tag"))
+	if err != nil {
+		t.Fatalf("ConfirmAttributeOwnershipAcquisitionCallback failed: %v", err)
+	}
+
+	t.Log("Ownership callbacks: OK")
+}
+
+func TestTimeCallbacks(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	err := gateway.TimeAdvanceGrantCallback(time.Now().Add(time.Second))
+	if err != nil {
+		t.Fatalf("TimeAdvanceGrantCallback failed: %v", err)
+	}
+
+	err = gateway.EnableAsynchronousDelivery()
+	if err != nil {
+		t.Fatalf("EnableAsynchronousDelivery failed: %v", err)
+	}
+
+	if !gateway.IsAsynchronousDeliveryEnabled() {
+		t.Error("AsynchronousDelivery should be enabled")
+	}
+
+	err = gateway.DisableAsynchronousDelivery()
+	if err != nil {
+		t.Fatalf("DisableAsynchronousDelivery failed: %v", err)
+	}
+
+	t.Log("Time callbacks: OK")
+}

@@ -1369,3 +1369,62 @@ func (r *RTIGateway) ChangeAttributeOrderType(className, attribute string, order
 	AttributeOrderTypes[key] = orderType
 	return nil
 }
+
+// =============================================================================
+// Phase 3.4.7: AttributeOwnershipUnavailable callback
+// =============================================================================
+
+// AttributeOwnershipUnavailableCallback is called when attribute ownership is unavailable
+func (r *RTIGateway) AttributeOwnershipUnavailableCallback(object uint32, attributes []uint32) error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.4.9: AttributeOwnershipDivestitureNotification callback
+// =============================================================================
+
+// AttributeOwnershipDivestitureNotificationCallback is called when ownership is divested
+func (r *RTIGateway) AttributeOwnershipDivestitureNotificationCallback(object uint32, attributes []uint32) error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.4.10: ConfirmAttributeOwnershipAcquisition callback
+// =============================================================================
+
+// ConfirmAttributeOwnershipAcquisitionCallback confirms attribute ownership
+func (r *RTIGateway) ConfirmAttributeOwnershipAcquisitionCallback(object uint32, attributes []uint32, tag []byte) error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.5.6: TimeAdvanceGrant callback
+// =============================================================================
+
+// TimeAdvanceGrantCallback is called when time advance is granted
+func (r *RTIGateway) TimeAdvanceGrantCallback(time time.Time) error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.5.8: EnableAsynchronousDelivery
+// =============================================================================
+
+// EnableAsynchronousDelivery enables async delivery
+func (r *RTIGateway) EnableAsynchronousDelivery() error {
+	return nil
+}
+
+// DisableAsynchronousDelivery disables async delivery
+func (r *RTIGateway) DisableAsynchronousDelivery() error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.5.9: EnableAsynchronousDelivery
+// =============================================================================
+
+// IsAsynchronousDeliveryEnabled checks if async delivery is on
+func (r *RTIGateway) IsAsynchronousDeliveryEnabled() bool {
+	return true
+}
