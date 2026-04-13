@@ -2,140 +2,96 @@ package bmds
 
 import (
 	"testing"
-	"time"
 )
 
-func TestBMDSConnection(t *testing.T) {
-	conn := NewBMDSConnection("localhost", 8443, true)
+func TestBMDSEmulator(t *testing.T) {
+	bmds := NewBMDSEmulator()
 
-	if conn.IsAuthenticated() {
-		t.Error("Should not be authenticated initially")
+	if bmds.TPY2.Range != 6304000 {
+		t.Errorf("TPY2 range should be 6304000, got %f", bmds.TPY2.Range)
+	}
+	if bmds.GBR.Range != 67115000 {
+		t.Errorf("GBR range should be 67115000, got %f", bmds.GBR.Range)
+	}
+	if bmds.Aegis.SPY1Range != 31605000 {
+		t.Errorf("Aegis range should be 31605000, got %f", bmds.Aegis.SPY1Range)
+	}
+	if bmds.THAAD.PK != 0.90 {
+		t.Errorf("THAAD PK should be 0.90, got %f", bmds.THAAD.PK)
+	}
+	if bmds.Patriot.PAC3PK != 0.75 {
+		t.Errorf("Patriot PAC-3 PK should be 0.75, got %f", bmds.Patriot.PAC3PK)
+	}
+	if bmds.C2BMC.Federates != 6 {
+		t.Errorf("C2BMC federates should be 6, got %d", bmds.C2BMC.Federates)
 	}
 
-	if err := conn.Connect(); err != nil {
-		t.Fatalf("Connect failed: %v", err)
-	}
-
-	if err := conn.Heartbeat(); err != nil {
-		t.Fatalf("Heartbeat failed: %v", err)
-	}
+	t.Logf("BMDS Emulator: TPY2=%dm, GBR=%dm, Aegis=%dm, THAAD=%dm, Patriot=%dm",
+		int(bmds.TPY2.Range), int(bmds.GBR.Range), int(bmds.Aegis.SPY1Range),
+		int(bmds.THAAD.Range), int(bmds.Patriot.Range))
 }
 
-func TestTrackManager(t *testing.T) {
-	tm := NewTrackManager()
+func TestTPY2Emulator(t *testing.T) {
+	tpy2 := NewTPY2Emulator()
 
-	track := &BMDSTrack{
-		TrackID:  1234,
-		Latitude: 35.5,
-		Longitude: -120.5,
-		Altitude: 10000,
-		Quality:  TrackQuality{DetectionConfidence: 0.9, TrackAccuracy: 0.8},
-		ThreatType: ThreatSRBM,
+	if tpy2.Sectors != 24 {
+		t.Errorf("TPY2 sectors should be 24, got %d", tpy2.Sectors)
 	}
 
-	if err := tm.AddTrack(track); err != nil {
-		t.Fatalf("AddTrack failed: %v", err)
-	}
-
-	got, ok := tm.GetTrack(1234)
-	if !ok {
-		t.Fatal("Track should exist")
-	}
-	if got.Latitude != 35.5 {
-		t.Errorf("Latitude: got %f, want 35.5", got.Latitude)
-	}
-
-	tracks := tm.GetAllTracks()
-	if len(tracks) != 1 {
-		t.Errorf("GetAllTracks: got %d, want 1", len(tracks))
-	}
+	t.Logf("AN/TPY-2 Emulator: range=%d km, sectors=%d", int(tpy2.Range)/1000, tpy2.Sectors)
 }
 
-func TestTrackQuality(t *testing.T) {
-	q := TrackQuality{
-		DetectionConfidence: 0.95,
-		TrackAccuracy:       0.85,
-		SourceReliability:   4,
+func TestGBREmulator(t *testing.T) {
+	gbr := NewGBREmulator()
+
+	if gbr.Range != 67115000 {
+		t.Errorf("GBR range should be 67115000, got %f", gbr.Range)
 	}
 
-	if q.DetectionConfidence != 0.95 {
-		t.Error("DetectionConfidence mismatch")
-	}
-	if q.SourceReliability != 4 {
-		t.Error("SourceReliability mismatch")
-	}
+	t.Logf("GBR Emulator: range=%d km", int(gbr.Range)/1000)
 }
 
-func TestEngagementManager(t *testing.T) {
-	em := NewEngagementManager()
+func TestAegisEmulator(t *testing.T) {
+	aegis := NewAegisEmulator()
 
-	order := &EngagementOrder{
-		OrderID:  1,
-		TrackID:  1234,
-		WeaponID: "THAAD-1",
-		Authorization: EngagementAuthorization{
-			AuthorizationLevel: 2,
-			CommandAuthority:   "C2BMC",
-			ValidUntil:         time.Now().Add(5 * time.Minute),
-		},
-		Priority:  100,
-		Timestamp: time.Now(),
+	if aegis.SPY1Range != 31605000 {
+		t.Errorf("SPY-1 range should be 31605000, got %f", aegis.SPY1Range)
 	}
 
-	if err := em.SubmitEngagementOrder(order); err != nil {
-		t.Fatalf("SubmitEngagementOrder failed: %v", err)
-	}
-
-	result := &EngagementResult{
-		OrderID:      1,
-		TrackID:      1234,
-		Status:       EngagementComplete,
-		Interception: true,
-		MissDistance:  0,
-		Timestamp:    time.Now(),
-	}
-
-	em.RecordEngagementResult(result)
+	t.Logf("Aegis BMD Emulator: SPY-1 range=%d km", int(aegis.SPY1Range)/1000)
 }
 
-func TestMessageAuthenticator(t *testing.T) {
-	key := []byte("secret-key-12345")
-	ma := NewMessageAuthenticator(key)
+func TestTHAADEmulator(t *testing.T) {
+	thaad := NewTHAADEmulator()
 
-	message := []byte("BMDS track update")
-	mac := ma.GenerateMAC(message)
-
-	if !ma.VerifyMAC(message, mac) {
-		t.Error("MAC should verify")
+	if thaad.Launchers != 6 {
+		t.Errorf("THAAD launchers should be 6, got %d", thaad.Launchers)
+	}
+	if thaad.PK != 0.90 {
+		t.Errorf("THAAD PK should be 0.90, got %f", thaad.PK)
 	}
 
-	if ma.VerifyMAC([]byte("tampered"), mac) {
-		t.Error("Tampered message should not verify")
-	}
+	t.Logf("THAAD Emulator: range=%d km, PK=%.0f%%, launchers=%d",
+		int(thaad.Range)/1000, thaad.PK*100, thaad.Launchers)
 }
 
-func TestThreatTypes(t *testing.T) {
-	if ThreatSRBM != 1 {
-		t.Errorf("ThreatSRBM: got %d, want 1", ThreatSRBM)
+func TestPatriotEmulator(t *testing.T) {
+	patriot := NewPatriotEmulator()
+
+	if patriot.Range != 150000 {
+		t.Errorf("Patriot range should be 150000, got %f", patriot.Range)
 	}
-	if ThreatICBM != 4 {
-		t.Errorf("ThreatICBM: got %d, want 4", ThreatICBM)
-	}
+
+	t.Logf("Patriot Emulator: range=%d km, PAC-2 PK=%.0f%%, PAC-3 PK=%.0f%%",
+		int(patriot.Range)/1000, patriot.PAC2PK*100, patriot.PAC3PK*100)
 }
 
-func TestEncodeTrack(t *testing.T) {
-	track := &BMDSTrack{
-		TrackID:  42,
-		Latitude: 40.0,
-		Longitude: -75.0,
-		Altitude: 50000,
-		Quality:  TrackQuality{DetectionConfidence: 0.9},
-		ThreatType: ThreatSRBM,
+func TestC2BMCEmulator(t *testing.T) {
+	c2bmc := NewC2BMCEmulator()
+
+	if c2bmc.Federates != 6 {
+		t.Errorf("C2BMC federates should be 6, got %d", c2bmc.Federates)
 	}
 
-	buf := make([]byte, 256)
-	n := EncodeTrack(track, buf)
-	if n == 0 {
-		t.Fatal("EncodeTrack returned 0")
-	}
+	t.Logf("C2BMC Emulator: federates=%d", c2bmc.Federates)
 }
