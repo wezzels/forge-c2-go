@@ -4,10 +4,11 @@ package hla
 
 import (
 	"encoding/binary"
-	"unsafe"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
+	"unsafe"
 )
 
 // HLA Object Model Types
@@ -771,19 +772,55 @@ type Subscription struct {
 	PublishedBy   []uint32 // federate handles
 }
 
+// InteractionPublication tracks interaction publications
+type InteractionPublication struct {
+	ClassHandle    uint32
+	ParameterCount uint32
+	SubscribedBy   []uint32 // federate handles
+}
+
+// InteractionSubscription tracks interaction subscriptions
+type InteractionSubscription struct {
+	ClassHandle    uint32
+	Parameters     []uint32
+	PublishedBy    []uint32 // federate handles
+}
+
+// TransportType defines the transport mechanism
+type TransportType uint8
+
+const (
+	TransportReliable   TransportType = 0
+	TransportBestEffort TransportType = 1
+)
+
+// OrderType defines the ordering mechanism
+type OrderType uint8
+
+const (
+	OrderTimestamp OrderType = 0
+	OrderReceive   OrderType = 1
+)
+
 // DeclarationManager handles HLA pub/sub
 type DeclarationManager struct {
-	publications  map[uint32]*Publication
-	subscriptions map[uint32]*Subscription
-	objectClasses map[uint32]*ObjectClassDescriptor
+	publications            map[uint32]*Publication
+	subscriptions           map[uint32]*Subscription
+	objectClasses           map[uint32]*ObjectClassDescriptor
+	interactionPublications  map[uint32]*InteractionPublication
+	interactionSubscriptions map[uint32]*InteractionSubscription
+	transportTypes          map[uint32]map[uint32]TransportType
+	orderTypes              map[uint32]map[uint32]OrderType
 }
 
 // NewDeclarationManager creates a new declaration manager
 func NewDeclarationManager() *DeclarationManager {
 	return &DeclarationManager{
-		publications:  make(map[uint32]*Publication),
-		subscriptions: make(map[uint32]*Subscription),
-		objectClasses: make(map[uint32]*ObjectClassDescriptor),
+		publications:            make(map[uint32]*Publication),
+		subscriptions:           make(map[uint32]*Subscription),
+		objectClasses:           make(map[uint32]*ObjectClassDescriptor),
+		interactionPublications:  make(map[uint32]*InteractionPublication),
+		interactionSubscriptions: make(map[uint32]*InteractionSubscription),
 	}
 }
 
@@ -845,11 +882,13 @@ type ObjectInstance struct {
 
 // ObjectManager handles HLA object instances
 type ObjectManager struct {
-	instances       map[uint32]*ObjectInstance
-	names           map[string]uint32 // name -> handle
+	instances        map[uint32]*ObjectInstance
+	names            map[string]uint32 // name -> handle
 	classToInstances map[uint32][]uint32
-	discoveryCB     func(object uint32, classHandle uint32, name string)
-	reflectionCB    func(object uint32, attributes map[uint32][]byte, tag []byte)
+	discoveryCB      func(object uint32, classHandle uint32, name string)
+	reflectionCB     func(object uint32, attributes map[uint32][]byte, tag []byte)
+	removeObjectInstanceCallbacks []RemoveObjectInstanceCallback
+	mu               sync.Mutex
 }
 
 // NewObjectManager creates a new object manager
@@ -971,12 +1010,14 @@ func (m *ObjectManager) SetReflectionCallback(cb func(object uint32, attributes 
 // TimeManager handles HLA logical time
 type TimeManager struct {
 	lookahead       time.Duration
-	LBTS           time.Time // Lower Bound on Times Stamp
+	LBTS            time.Time // Lower Bound on Times Stamp
 	currentTime     time.Time
 	isRegulating    bool
 	isConstrained   bool
 	isAdvancing     bool
 	federateHandle  uint32
+	AsyncDeliveryEnabled bool
+	mu              sync.Mutex
 }
 
 // NewTimeManager creates a new time manager
@@ -1048,7 +1089,11 @@ type OwnershipEntry struct {
 
 // OwnershipManager handles HLA attribute ownership
 type OwnershipManager struct {
-	ownerships map[uint32]map[uint32]*OwnershipEntry // object -> attr -> entry
+	ownerships                  map[uint32]map[uint32]*OwnershipEntry // object -> attr -> entry
+	attrUnavailableCallbacks    []AttributeOwnershipUnavailableCallback
+	attrDivestitureCallbacks    []AttributeOwnershipDivestitureNotificationCallback
+	confirmAcquisitionCallbacks []ConfirmAttributeOwnershipAcquisitionCallback
+	mu                          sync.Mutex
 }
 
 // NewOwnershipManager creates a new ownership manager
@@ -1165,11 +1210,22 @@ type Dimension struct {
 	Units         string
 }
 
+// RegionSubscription tracks region-based subscriptions
+type RegionSubscription struct {
+	ClassHandle  uint32
+	RegionHandle uint32
+	Attributes   []uint32
+}
+
 // DDMManager handles data distribution management
 type DDMManager struct {
-	regions      map[uint32]*Region
+	regions       map[uint32]*Region
 	routingSpaces map[uint32]*RoutingSpace
 	nextRegionHandle uint32
+	objectClassRegions map[uint32]map[uint32]*RegionSubscription
+	interactionRegions map[uint32]map[uint32]*RegionSubscription
+	regionCallbacks   []RegionSubscriptionCallback
+	mu               sync.Mutex
 }
 
 // NewDDMManager creates a new DDM manager
