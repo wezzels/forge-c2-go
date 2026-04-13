@@ -44,6 +44,9 @@ type DatatypeDefinition struct {
 	Kind      DatatypeKind
 	BaseType  string
 	Enumerals []Enumeral
+	Fields    []Field // for record datatypes
+	ElementType string // for array datatypes
+	ArrayBounds []int // for array datatypes
 }
 
 type DatatypeKind int
@@ -58,6 +61,21 @@ const (
 type Enumeral struct {
 	Name  string
 	Value int
+}
+
+// Field represents a record field
+type Field struct {
+	Name     string
+	Datatype string
+	Offset   int
+	Size     int
+}
+
+// RecordDefinition expands record datatype with field details
+type RecordDefinition struct {
+	Name   string
+	Fields []Field
+	Size   int
 }
 
 type FOMParser struct {
