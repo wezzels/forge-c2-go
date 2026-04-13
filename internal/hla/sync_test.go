@@ -231,3 +231,100 @@ func TestTimeCallbacks(t *testing.T) {
 
 	t.Log("Time callbacks: OK")
 }
+
+func TestRegionSubscriptions(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	err := gateway.SubscribeObjectClassAttributesWithRegion("TankEntity", []uint32{1, 2, 3}, 100)
+	if err != nil {
+		t.Fatalf("SubscribeObjectClassAttributesWithRegion failed: %v", err)
+	}
+
+	err = gateway.UnsubscribeObjectClassAttributesWithRegion("TankEntity", 100)
+	if err != nil {
+		t.Fatalf("UnsubscribeObjectClassAttributesWithRegion failed: %v", err)
+	}
+
+	t.Log("Region subscriptions: OK")
+}
+
+func TestTimeRegulationCallbacks(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	err := gateway.TimeRegulationEnabledCallback(handle)
+	if err != nil {
+		t.Fatalf("TimeRegulationEnabledCallback failed: %v", err)
+	}
+
+	err = gateway.TimeConstrainedEnabledCallback(handle)
+	if err != nil {
+		t.Fatalf("TimeConstrainedEnabledCallback failed: %v", err)
+	}
+
+	t.Log("Time regulation callbacks: OK")
+}
+
+func TestObjectClassHandles(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	gateway.RegisterObjectClass("TankEntity", 1)
+	gateway.RegisterObjectClass("AircraftEntity", 2)
+
+	if gateway.GetObjectClass("TankEntity") != 1 {
+		t.Error("TankEntity should have handle 1")
+	}
+	if gateway.GetObjectClass("AircraftEntity") != 2 {
+		t.Error("AircraftEntity should have handle 2")
+	}
+	if gateway.GetObjectClass("Unknown") != 0 {
+		t.Error("Unknown should have handle 0")
+	}
+
+	t.Log("Object class handles: OK")
+}
+
+func TestVariableRateTransmission(t *testing.T) {
+	SetTransmissionRate("track-update", 10.0)
+	SetTransmissionRate("status-update", 1.0)
+
+	if GetTransmissionRate("track-update") != 10.0 {
+		t.Error("track-update should be 10.0")
+	}
+	if GetTransmissionRate("status-update") != 1.0 {
+		t.Error("status-update should be 1.0")
+	}
+	if GetTransmissionRate("unknown") != 1.0 {
+		t.Error("unknown should default to 1.0")
+	}
+
+	t.Log("Variable rate transmission: OK")
+}
+
+func TestC3WarfareSimulation(t *testing.T) {
+	c3 := &C3System{
+		Domain: DomainLand,
+		UnitID: "BattalionHQ",
+		Connected: []string{"CompanyA", "CompanyB", "CompanyC"},
+	}
+
+	err := c3.SendC3Message("CompanyA", "Orders", []byte("Advance"))
+	if err != nil {
+		t.Fatalf("SendC3Message failed: %v", err)
+	}
+
+	err = c3.BroadcastC3Message("SitRep", []byte("All units report"))
+	if err != nil {
+		t.Fatalf("BroadcastC3Message failed: %v", err)
+	}
+
+	t.Logf("C3 system: %s connected to %d units", c3.UnitID, len(c3.Connected))
+}

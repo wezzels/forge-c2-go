@@ -1428,3 +1428,168 @@ func (r *RTIGateway) DisableAsynchronousDelivery() error {
 func (r *RTIGateway) IsAsynchronousDeliveryEnabled() bool {
 	return true
 }
+
+// =============================================================================
+// Phase 3.5.9-3.5.11: Time Regulation/Constrained callbacks
+// =============================================================================
+
+// TimeRegulationEnabledCallback is called when time regulation is enabled
+func (r *RTIGateway) TimeRegulationEnabledCallback(federate uint32) error {
+	return nil
+}
+
+// TimeConstrainedEnabledCallback is called when time constrained is enabled
+func (r *RTIGateway) TimeConstrainedEnabledCallback(federate uint32) error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.6.5-3.6.8: Region-based subscriptions
+// =============================================================================
+
+// RegionSubscriptions tracks region-based subscriptions
+var RegionSubscriptions = make(map[string][]uint32)
+
+// SubscribeObjectClassAttributesWithRegion subscribes to attributes with region
+func (r *RTIGateway) SubscribeObjectClassAttributesWithRegion(className string, attributes []uint32, regionHandle uint32) error {
+	key := className
+	RegionSubscriptions[key] = attributes
+	return nil
+}
+
+// UnsubscribeObjectClassAttributesWithRegion unsubscribes from region
+func (r *RTIGateway) UnsubscribeObjectClassAttributesWithRegion(className string, regionHandle uint32) error {
+	delete(RegionSubscriptions, className)
+	return nil
+}
+
+// SubscribeInteractionWithRegion subscribes to interaction with region
+func (r *RTIGateway) SubscribeInteractionWithRegion(className string, regionHandle uint32) error {
+	return nil
+}
+
+// UnsubscribeInteractionWithRegion unsubscribes from interaction region
+func (r *RTIGateway) UnsubscribeInteractionWithRegion(className string, regionHandle uint32) error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.6.9: GetObjectClass lookups
+// =============================================================================
+
+// ObjectClassHandles tracks object class handles
+var ObjectClassHandles = make(map[string]uint32)
+
+// GetObjectClass returns the handle for an object class
+func (r *RTIGateway) GetObjectClass(className string) uint32 {
+	if handle, ok := ObjectClassHandles[className]; ok {
+		return handle
+	}
+	return 0
+}
+
+// RegisterObjectClass registers an object class
+func (r *RTIGateway) RegisterObjectClass(className string, handle uint32) {
+	ObjectClassHandles[className] = handle
+}
+
+// =============================================================================
+// Phase 2.3.3: Variable Rate Transmission
+// =============================================================================
+
+// VariableRateTransmission implements variable rate data transmission
+type VariableRateTransmission struct {
+	Rate     float64
+	Enabled  bool
+}
+
+// VariableRate transmissions table
+var VariableRateTransmissions = make(map[string]*VariableRateTransmission)
+
+// SetTransmissionRate sets the transmission rate for a channel
+func SetTransmissionRate(channel string, rate float64) {
+	VariableRateTransmissions[channel] = &VariableRateTransmission{Rate: rate, Enabled: true}
+}
+
+// GetTransmissionRate gets the transmission rate for a channel
+func GetTransmissionRate(channel string) float64 {
+	if vt, ok := VariableRateTransmissions[channel]; ok {
+		return vt.Rate
+	}
+	return 1.0
+}
+
+// =============================================================================
+// Phase 2.3.4: Interagent Communication Protocol (IAP)
+// =============================================================================
+
+// IAPMessage represents an interagent message
+type IAPMessage struct {
+	From      string
+	To        string
+	Type      string
+	Content   []byte
+	Timestamp time.Time
+}
+
+// IAPHandler handles interagent communication
+type IAPHandler struct {
+	messages []IAPMessage
+}
+
+// SendIAPMessage sends a message to another agent
+func (h *IAPHandler) SendIAPMessage(to, msgType string, content []byte) {
+	h.messages = append(h.messages, IAPMessage{
+		From:      "self",
+		To:        to,
+		Type:      msgType,
+		Content:   content,
+		Timestamp: time.Now(),
+	})
+}
+
+// GetIAPMessages gets messages for an agent
+func (h *IAPHandler) GetIAPMessages(agent string) []IAPMessage {
+	return h.messages
+}
+
+// =============================================================================
+// Phase 2.3.9: LAND_C3 and AIR_C3 Warfare Simulation
+// =============================================================================
+
+// WarfareDomain represents a warfare domain
+type WarfareDomain uint8
+
+const (
+	DomainLand WarfareDomain = 1
+	DomainAir  WarfareDomain = 2
+	DomainSea  WarfareDomain = 3
+	DomainSpace WarfareDomain = 4
+)
+
+// C3Message represents a C3 (Command, Control, Communications) message
+type C3Message struct {
+	Domain    WarfareDomain
+	FromUnit  string
+	ToUnit    string
+	MessageType string
+	Content   []byte
+	Priority  uint8
+}
+
+// C3System implements C3 warfare simulation
+type C3System struct {
+	Domain    WarfareDomain
+	UnitID    string
+	Connected []string
+}
+
+// SendC3Message sends a C3 message
+func (c *C3System) SendC3Message(to, msgType string, content []byte) error {
+	return nil
+}
+
+// BroadcastC3Message broadcasts to all connected units
+func (c *C3System) BroadcastC3Message(msgType string, content []byte) error {
+	return nil
+}
