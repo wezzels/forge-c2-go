@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// TestSynchronizationPoint tests synchronization point registration and announcement.
 func TestSynchronizationPoint(t *testing.T) {
 	gateway := NewRTIGateway()
 	gateway.CreateFederation("TestFed", "TestFOM")
@@ -24,7 +23,6 @@ func TestSynchronizationPoint(t *testing.T) {
 	t.Logf("SynchronizationPoint: registered and achieved %s", label)
 }
 
-// TestFederationSaveRestore tests federation save and restore flow.
 func TestFederationSaveRestore(t *testing.T) {
 	gateway := NewRTIGateway()
 	gateway.CreateFederation("TestFed", "TestFOM")
@@ -52,7 +50,6 @@ func TestFederationSaveRestore(t *testing.T) {
 	t.Logf("FederationSaveRestore: handle=%d save=%s", handle, saveLabel)
 }
 
-// TestSynchronizationPointCallbacks tests sync point callback handling.
 func TestSynchronizationPointCallbacks(t *testing.T) {
 	gateway := NewRTIGateway()
 	gateway.CreateFederation("TestFed", "TestFOM")
@@ -64,7 +61,6 @@ func TestSynchronizationPointCallbacks(t *testing.T) {
 	t.Logf("SynchronizationPointCallbacks: OK")
 }
 
-// TestFederationRestoreRequest tests restore request flow.
 func TestFederationRestoreRequest(t *testing.T) {
 	gateway := NewRTIGateway()
 	gateway.CreateFederation("TestFed", "TestFOM")
@@ -81,4 +77,102 @@ func TestFederationRestoreRequest(t *testing.T) {
 	}
 
 	t.Logf("FederationRestoreRequest: label=%s", restoreLabel)
+}
+
+func TestPublishInteractionClass(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	err := gateway.PublishInteractionClass("WeaponFireInteraction")
+	if err != nil {
+		t.Fatalf("PublishInteractionClass failed: %v", err)
+	}
+
+	if !gateway.IsInteractionClassPublished("WeaponFireInteraction") {
+		t.Error("WeaponFireInteraction should be published")
+	}
+
+	t.Log("PublishInteractionClass: published WeaponFireInteraction")
+}
+
+func TestUnpublishInteractionClass(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	gateway.PublishInteractionClass("TestInteraction")
+	err := gateway.UnpublishInteractionClass("TestInteraction")
+	if err != nil {
+		t.Fatalf("UnpublishInteractionClass failed: %v", err)
+	}
+
+	if gateway.IsInteractionClassPublished("TestInteraction") {
+		t.Error("TestInteraction should not be published after unpublish")
+	}
+
+	t.Log("UnpublishInteractionClass: unpublished TestInteraction")
+}
+
+func TestSubscribeInteractionClass(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	err := gateway.SubscribeInteractionClass("CollisionInteraction")
+	if err != nil {
+		t.Fatalf("SubscribeInteractionClass failed: %v", err)
+	}
+
+	if !gateway.IsInteractionClassSubscribed("CollisionInteraction") {
+		t.Error("CollisionInteraction should be subscribed")
+	}
+
+	t.Log("SubscribeInteractionClass: subscribed to CollisionInteraction")
+}
+
+func TestUnsubscribeInteractionClass(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	gateway.SubscribeInteractionClass("TestInteraction")
+	err := gateway.UnsubscribeInteractionClass("TestInteraction")
+	if err != nil {
+		t.Fatalf("UnsubscribeInteractionClass failed: %v", err)
+	}
+
+	if gateway.IsInteractionClassSubscribed("TestInteraction") {
+		t.Error("TestInteraction should not be subscribed after unsubscribe")
+	}
+
+	t.Log("UnsubscribeInteractionClass: unsubscribed from TestInteraction")
+}
+
+func TestChangeAttributeTypes(t *testing.T) {
+	gateway := NewRTIGateway()
+	gateway.CreateFederation("TestFed", "TestFOM")
+
+	handle, _ := gateway.JoinFederation("TestFed", "FORGE-C2", "TestFederate")
+	_ = handle
+
+	err := gateway.ChangeAttributeTransportType("TankEntity", "Position", 1)
+	if err != nil {
+		t.Fatalf("ChangeAttributeTransportType failed: %v", err)
+	}
+
+	err = gateway.ChangeAttributeOrderType("TankEntity", "Position", 2)
+	if err != nil {
+		t.Fatalf("ChangeAttributeOrderType failed: %v", err)
+	}
+
+	t.Log("ChangeAttributeTypes: transport=1, order=2")
 }

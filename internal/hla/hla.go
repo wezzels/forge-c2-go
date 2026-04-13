@@ -1292,3 +1292,80 @@ func (m *DDMManager) RegisterRoutingSpace(name string, dims []Dimension) (*Routi
 	m.routingSpaces[handle] = rs
 	return rs, nil
 }
+
+// =============================================================================
+// Phase 3.2.3-3.2.4: Publish/Unpublish Interaction Class
+// =============================================================================
+
+// PublishedInteractions tracks published interaction classes
+var PublishedInteractions = make(map[string]bool)
+
+// SubscribedInteractions tracks subscribed interaction classes
+var SubscribedInteractions = make(map[string]bool)
+
+// PublishInteractionClass publishes an interaction class
+func (r *RTIGateway) PublishInteractionClass(className string) error {
+	PublishedInteractions[className] = true
+	return nil
+}
+
+// UnpublishInteractionClass unpublishes an interaction class
+func (r *RTIGateway) UnpublishInteractionClass(className string) error {
+	delete(PublishedInteractions, className)
+	return nil
+}
+
+// IsInteractionClassPublished checks if an interaction class is published
+func (r *RTIGateway) IsInteractionClassPublished(className string) bool {
+	return PublishedInteractions[className]
+}
+
+// SubscribeInteractionClass subscribes to an interaction class
+func (r *RTIGateway) SubscribeInteractionClass(className string) error {
+	SubscribedInteractions[className] = true
+	return nil
+}
+
+// UnsubscribeInteractionClass unsubscribes from an interaction class
+func (r *RTIGateway) UnsubscribeInteractionClass(className string) error {
+	delete(SubscribedInteractions, className)
+	return nil
+}
+
+// IsInteractionClassSubscribed checks if an interaction class is subscribed
+func (r *RTIGateway) IsInteractionClassSubscribed(className string) bool {
+	return SubscribedInteractions[className]
+}
+
+// =============================================================================
+// Phase 3.3.6: Remove Object Instance Callback
+// =============================================================================
+
+// RemoveObjectInstanceCallback is called when an object is removed
+func (r *RTIGateway) RemoveObjectInstanceCallback(handle uint32, tag []byte) error {
+	return nil
+}
+
+// =============================================================================
+// Phase 3.3.7-3.3.8: Change Attribute Transport/Order Type
+// =============================================================================
+
+// AttributeTransportTypes tracks transport types for attributes
+var AttributeTransportTypes = make(map[string]uint8)
+
+// AttributeOrderTypes tracks order types for attributes
+var AttributeOrderTypes = make(map[string]uint8)
+
+// ChangeAttributeTransportType changes the transport type for an attribute
+func (r *RTIGateway) ChangeAttributeTransportType(className, attribute string, transportType uint8) error {
+	key := className + "." + attribute
+	AttributeTransportTypes[key] = transportType
+	return nil
+}
+
+// ChangeAttributeOrderType changes the order type for an attribute
+func (r *RTIGateway) ChangeAttributeOrderType(className, attribute string, orderType uint8) error {
+	key := className + "." + attribute
+	AttributeOrderTypes[key] = orderType
+	return nil
+}
