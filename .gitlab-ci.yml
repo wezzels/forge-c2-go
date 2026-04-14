@@ -1,87 +1,12 @@
-# GitLab CI/CD Pipeline for FORGE-C2
-# Tests everything and cleans up after itself
+image: golang:1.21
 
 stages:
   - test
-  - cleanup
 
-variables:
-  GOPRIVATE: "git@idm.wezzel.com:crab-meat-repos/*"
-
-# =============================================================================
-# Test Stage - Run all tests
-# =============================================================================
-test:jreap:
+test:
   stage: test
-  image: golang:1.22
+  script:
+    - go version
+    - go test ./... -v -race
   tags:
     - docker
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq git ssh-client > /dev/null 2>&1
-    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - eval $(ssh-agent -s)
-    - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
-    - git clone git@idm.wezzel.com:crab-meat-repos/forge-c2-go.git /tmp/forge-c2
-    - cd /tmp/forge-c2
-    - go mod download
-  script:
-    - cd /tmp/forge-c2
-    - go test ./jreap/... -v -count=1
-    - go test ./mdpa/... -v -count=1
-    - go test ./internal/... -v -count=1
-  coverage: '/ok.*coverage.*\$/'
-  artifacts:
-    when: always
-    reports:
-      junit: /tmp/forge-c2/junit.xml
-    paths:
-      - /tmp/forge-c2/coverage.txt
-  after_script:
-    - echo "Tests complete for jreap"
-
-test:build:
-  stage: test
-  image: golang:1.22
-  tags:
-    - docker
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq gcc > /dev/null 2>&1
-    - git clone git@idm.wezzel.com:crab-meat-repos/forge-c2-go.git /tmp/forge-c2-build
-  script:
-    - cd /tmp/forge-c2-build
-    - CGO_ENABLED=1 go build -o /tmp/forge-c2-bin ./...
-    - echo "Build successful"
-    - ls -la /tmp/forge-c2-bin 2>/dev/null || echo "Multiple binaries built"
-  after_script:
-    - echo "Build test complete"
-
-test:lint:
-  stage: test
-  image: golangci/golangci-lint:latest
-  tags:
-    - docker
-  before_script:
-    - git clone git@idm.wezzel.com:crab-meat-repos/forge-c2-go.git /tmp/forge-c2-lint
-  script:
-    - cd /tmp/forge-c2-lint
-    - golangci-lint run ./...
-  allow_failure: true  # Linting is best-effort
-
-# =============================================================================
-# Cleanup Stage - Clean up runner
-# =============================================================================
-runner:cleanup:
-  stage: cleanup
-  image: alpine:latest
-  tags:
-    - docker
-  script:
-    - echo "=== FORGE-C2 CI/CD Pipeline Complete ==="
-    - echo "Cleaning up runner artifacts..."
-    - rm -rf /tmp/forge-c2 /tmp/forge-c2-build /tmp/forge-c2-lint /tmp/forge-c2-bin 2>/dev/null || true
-    - echo "Cleanup complete"
-    - echo ""
-    - echo "Runner is now clean. No artifacts remain on this runner."
-  when: always
-  after_script:
-    - echo "Pipeline self-destruct complete"
