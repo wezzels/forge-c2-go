@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"forge-c2/internal"
 )
 
 // Version info (set at build time)
@@ -42,23 +43,19 @@ func runServer() {
 	fmt.Printf("FORGE-C2 v%s (commit: %s, built: %s)\n", Version, Commit, BuildDate)
 	fmt.Println("Starting FORGE-C2 server...")
 
-	// Create HTTP server with timeouts
-	server := &http.Server{
-		Addr:         ":8080",
-		Handler:      createMux(),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
+	// Create the full FORGE-C2 server
+	server, err := internal.NewServer(&internal.Config{
+		Port:      "8080",
+		KafkaBroker: "localhost:9092",
+		C2BMCURL:  "http://localhost:5002",
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create server: %v\n", err)
+		os.Exit(1)
 	}
 
-	// Start server in goroutine
-	go func() {
-		fmt.Println("Server listening on :8080")
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
-			os.Exit(1)
-		}
-	}()
+	// Start server
+	go server.Run()
 
 	// Wait for shutdown signal
 	quit := make(chan os.Signal, 1)
@@ -66,16 +63,6 @@ func runServer() {
 	<-quit
 
 	fmt.Println("Shutting down server...")
-
-	// Graceful shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := server.Shutdown(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "Server shutdown error: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("Server stopped")
 }
 
 func runWorker() {

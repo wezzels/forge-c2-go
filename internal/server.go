@@ -138,13 +138,19 @@ func (s *Server) setupRoutes() {
 	api.HandleFunc("/inject/sensor", s.handleInjectSensor).Methods("POST")
 }
 
-// Run starts the HTTP server
+// Run starts the HTTP server and supporting services
 func (s *Server) Run() {
 	addr := ":" + s.config.Port
 	log.Printf("[FORGE-C2] Starting server on %s", addr)
+	
+	// Start Kafka consumer in background
+	ctx, cancel := context.WithCancel(context.Background())
+	go s.StartKafkaConsumer(ctx)
+	
 	if err := http.ListenAndServe(addr, s.router); err != nil {
 		log.Fatalf("[FORGE-C2] Server error: %v", err)
 	}
+	cancel()
 }
 
 // StartKafkaConsumer starts consuming from Kafka topics

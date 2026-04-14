@@ -107,7 +107,7 @@ func (k *KafkaBroker) ConsumeTopics(ctx context.Context, topics []string, handle
 			MinBytes:       10e3,
 			MaxBytes:       10e6,
 			CommitInterval: time.Second,
-			StartOffset:    kafka.LastOffset,
+			StartOffset:    kafka.FirstOffset,
 		})
 
 		go func(t string, r *kafka.Reader) {
