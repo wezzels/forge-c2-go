@@ -1,0 +1,26 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: forge-c2
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 30000
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 30001
+        hostPort: 5000
+        protocol: UDP
+      - containerPort: 30002
+        hostPort: 5001
+        protocol: TCP
+      - containerPort: 30003
+        hostPort: 3000
+        protocol: UDP
+  - role: worker
+  - role: worker

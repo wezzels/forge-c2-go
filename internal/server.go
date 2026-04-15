@@ -42,6 +42,7 @@ type Server struct {
 	jreapOutput   chan []byte // outbound JREAP messages
 	clients       map[*websocket.Conn]bool
 	clientMu      sync.RWMutex
+	stopCh        chan struct{}
 }
 
 // TrackStore holds track state
@@ -109,6 +110,7 @@ func NewServer(cfg *Config) (*Server, error) {
 	s.jreapConsumer = NewJREAPConsumer(s.correlator, s.c2bmc, s.trackStore)
 	s.jreapEncoder = jreap.NewEncoder(s.config.Port, "FORGE-C2")
 	s.jreapOutput = make(chan []byte, 256)
+	s.stopCh = make(chan struct{}, 1)
 	s.setupRoutes()
 	return s, nil
 }
@@ -117,6 +119,12 @@ func NewServer(cfg *Config) (*Server, error) {
 func (s *Server) setupRoutes() {
 	// Health check
 	s.router.HandleFunc("/health", s.handleHealth).Methods("GET")
+
+	// Prometheus metrics
+	s.router.HandleFunc("/metrics", s.handleMetrics).Methods("GET")
+
+	// Readiness probe
+	s.router.HandleFunc("/ready", s.handleReady).Methods("GET")
 
 	// REST API
 	api := s.router.PathPrefix("/api").Subrouter()
@@ -147,15 +155,40 @@ func (s *Server) setupRoutes() {
 func (s *Server) Run() {
 	addr := ":" + s.config.Port
 	log.Printf("[FORGE-C2] Starting server on %s", addr)
-	
+
 	// Start Kafka consumer in background
 	ctx, cancel := context.WithCancel(context.Background())
 	go s.StartKafkaConsumer(ctx)
-	
-	if err := http.ListenAndServe(addr, s.router); err != nil {
+
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: s.router,
+	}
+
+	// Graceful shutdown on signal
+	go func() {
+		<-s.stopCh // block until Shutdown() called
+		log.Printf("[FORGE-C2] Shutting down...")
+		shutCtx, shutCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer shutCancel()
+		if err := srv.Shutdown(shutCtx); err != nil {
+			log.Printf("[FORGE-C2] Shutdown error: %v", err)
+		}
+		cancel()
+	}()
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatalf("[FORGE-C2] Server error: %v", err)
 	}
-	cancel()
+	log.Printf("[FORGE-C2] Server stopped")
+}
+
+// Shutdown triggers a graceful shutdown.
+func (s *Server) Shutdown() {
+	select {
+	case s.stopCh <- struct{}{}:
+	default:
+	}
 }
 
 // StartKafkaConsumer starts consuming from Kafka topics
@@ -301,7 +334,18 @@ func (s *Server) broadcastC2BMCState() {
 // HTTP Handlers
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	w.Header().Set("Content-Type", "application/json")
+	status := map[string]interface{}{
+		"status":       "ok",
+		"uptime":       GlobalMetrics.Uptime().String(),
+		"active_tracks": GlobalMetrics.ActiveTracks.Load(),
+		"jreap_encoded": GlobalMetrics.JREAPMessagesEncoded.Load(),
+		"jreap_decoded": GlobalMetrics.JREAPMessagesDecoded.Load(),
+		"jreap_errors":  GlobalMetrics.JREAPEncodeErrors.Load() + GlobalMetrics.JREAPDecodeErrors.Load(),
+		"dis_sent":     GlobalMetrics.DISPDUsSent.Load(),
+		"dis_recv":     GlobalMetrics.DISPDUsReceived.Load(),
+	}
+	json.NewEncoder(w).Encode(status)
 }
 
 func (s *Server) handleListTracks(w http.ResponseWriter, r *http.Request) {
@@ -365,6 +409,19 @@ func (s *Server) handleListEngagements(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCorrelatorStats(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s.correlator.GetStats())
+}
+
+// handleMetrics serves Prometheus-format metrics.
+func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
+	w.Write([]byte(GlobalMetrics.PrometheusFormat()))
+}
+
+// handleReady is a readiness probe.
+func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Basic readiness: if we can respond, we're ready
+	json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
 }
 
 func (s *Server) handleInjectSensor(w http.ResponseWriter, r *http.Request) {

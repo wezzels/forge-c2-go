@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: forge-c2
+  namespace: gms
+  labels:
+    app: forge-c2
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: jreap-udp
+      port: 5000
+      targetPort: 5000
+      protocol: UDP
+    - name: jreap-tcp
+      port: 5001
+      targetPort: 5001
+      protocol: TCP
+    - name: dis
+      port: 3000
+      targetPort: 3000
+      protocol: UDP
+  selector:
+    app: forge-c2
