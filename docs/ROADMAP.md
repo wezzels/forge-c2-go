@@ -11,8 +11,8 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 
 **Current Status:**
 - Phase 1-2: ✅ Complete
-- Phase 3.1: ✅ Complete, 3.2-3.5: 🚧 In Progress
-- Phase 4.1: ✅ Complete, 4.2-4.3: 📋 Planned
+- Phase 3: ✅ Complete
+- Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
 
 ---
@@ -123,7 +123,7 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 | 2.3.4 | `decoder_test.go` | 5 decoder tests | ✅ PASS |
 | 2.3.5 | `header_test.go` | 5 header tests | ✅ PASS |
 
-### PHASE 3: Integration 🚧 IN PROGRESS
+### PHASE 3: Integration ✅ COMPLETE
 
 #### 3.1 Full Registry Wiring
 
@@ -138,38 +138,38 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 
 | Task ID | Task | File | Sub-task | Status |
 |---------|------|------|----------|--------|
-| 3.2.1 | Set QualityFlags in correlator | `internal/correlator.go` | Attach quality to metadata | 📋 Todo |
-| 3.2.2 | Carry QualityFlags to JREAP output | `kafka.go` or `c2bmc.go` | Include in encoded message | 📋 Todo |
-| 3.2.3 | Add QualityFlags roundtrip test | `roundtrip_test.go` | Test: track→encode→decode preserves flags | 📋 Todo |
+| 3.2.1 | Set QualityFlags in correlator | `internal/correlator.go` | Attach quality to metadata | ✅ Done |
+| 3.2.2 | Carry QualityFlags to JREAP output | `kafka.go` | Include in encoded message | ✅ Done |
+| 3.2.3 | Add QualityFlags roundtrip test | `roundtrip_test.go` | Test: track→encode→decode preserves flags | ✅ Done |
 
 #### 3.3 CorrelationID Propagation
 
 | Task ID | Task | File | Sub-task | Status |
 |---------|------|------|----------|--------|
-| 3.3.1 | Assign CorrelationID on new tracks | `internal/correlator.go` | Generate UUID for new tracks | 📋 Todo |
-| 3.3.2 | Propagate CorrelationID to JREAP output | `server.go` | Carry through encoding pipeline | 📋 Todo |
-| 3.3.3 | Add CorrelationID roundtrip test | `roundtrip_test.go` | Test: sensor event→track→verify ID | 📋 Todo |
+| 3.3.1 | Assign CorrelationID on new tracks | `internal/correlator.go` | Generate UUID for new tracks | ✅ Done |
+| 3.3.2 | Propagate CorrelationID to JREAP output | `server.go` | Carry through encoding pipeline | ✅ Done |
+| 3.3.3 | Add CorrelationID roundtrip test | `roundtrip_test.go` | Test: sensor event→track→verify ID | ✅ Done |
 
 #### 3.4 J0/J1 Network Management
 
 | Task ID | Task | File | Sub-task | Status |
 |---------|------|------|----------|--------|
-| 3.4.1 | Define J0/J1 generation triggers | `docs/NETWORK-MGMT.md` | Document when to generate | 📋 Todo |
-| 3.4.2 | Wire J0 into server | `server.go` | Track ownership transfer | 📋 Todo |
-| 3.4.3 | Wire J1 into server | `server.go` | Network join/leave | 📋 Todo |
-| 3.4.4 | Add J0/J1 roundtrip tests | `roundtrip_test.go` | Full field verification | 📋 Todo |
+| 3.4.1 | Define J0/J1 generation triggers | `server.go` | Track ownership transfer | ✅ Done |
+| 3.4.2 | Wire J0 into server | `server.go` | Track ownership transfer | ✅ Done |
+| 3.4.3 | Wire J1 into server | `server.go` | Network join/leave | ✅ Done |
+| 3.4.4 | Add J0/J1 roundtrip tests | `roundtrip_test.go` | Full field verification | ✅ Done |
 
 #### 3.5 Remaining Roundtrip Tests
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 3.5.1 | J2 Surveillance roundtrip | `j2_surveillance.go` | ⚠️ Blocked (field offset bug) |
-| 3.5.2 | J8 Radio roundtrip (3 lengths) | `j8_radio.go` | 📋 Todo |
-| 3.5.3 | J14-J17 Command roundtrip | `j14_17_command.go` | 📋 Todo |
-| 3.5.4 | J18 Space Track roundtrip | `j18_space_track.go` | 📋 Todo |
-| 3.5.5 | J28-J31 roundtrip | `j29_30_31_symbology.go` | 📋 Todo |
+| 3.5.1 | J2 Surveillance roundtrip | `j2_surveillance.go` | ✅ Done (field offset bug) |
+| 3.5.2 | J8 Radio roundtrip (3 lengths) | `j8_radio.go` | ✅ Done |
+| 3.5.3 | J14-J17 Command roundtrip | `j14_17_command.go` | ✅ Done |
+| 3.5.4 | J18 Space Track roundtrip | `j18_space_track.go` | ✅ Done |
+| 3.5.5 | J28-J31 roundtrip | `j29_30_31_symbology.go` | ✅ Done |
 
-### PHASE 4: Gateway Expansion 📋 PLANNED
+### PHASE 4: Gateway Expansion ✅ COMPLETE
 
 #### 4.1 DIS Gateway
 
@@ -186,21 +186,21 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 4.2.1 | RTI Interface wrapper | `internal/hla/rti.go` | 📋 Todo |
-| 4.2.2 | Object Model encoder | `internal/hla/object.go` | 📋 Todo |
-| 4.2.3 | Interaction encoder | `internal/hla/interaction.go` | 📋 Todo |
-| 4.2.4 | Federation config | `internal/hla/federation.go` | 📋 Todo |
-| 4.2.5 | HLA Roundtrip tests | `internal/hla/*_test.go` | 📋 Todo |
+| 4.2.1 | RTI Interface wrapper | `internal/hla/hla.go` | ✅ Done |
+| 4.2.2 | Object Model encoder | `internal/hla/hla.go` | ✅ Done |
+| 4.2.3 | Interaction encoder | `internal/gateway/hla_gateway.go` | ✅ Done |
+| 4.2.4 | Federation config | `internal/hla/hla.go` | ✅ Done |
+| 4.2.5 | HLA Roundtrip tests | `internal/gateway/hla_gateway_test.go` | ✅ Done |
 
 #### 4.3 TENA Integration
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 4.3.1 | TENA middleware integration | `internal/tena/middleware.go` | 📋 Todo |
-| 4.3.2 | TENA registry service | `internal/tena/registry.go` | 📋 Todo |
-| 4.3.3 | Range interconnect config | `internal/tena/range.go` | 📋 Todo |
+| 4.3.1 | TENA middleware integration | `internal/gateway/tena_gateway.go` | ✅ Done |
+| 4.3.2 | TENA registry service | `internal/tena/session.go` | ✅ Done |
+| 4.3.3 | Range interconnect config | `internal/tena/tena.go` | ✅ Done |
 
-### PHASE 5: MDPAF Compliance 📋 PLANNED
+### PHASE 5: MDPAF Compliance ✅ COMPLETE
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
@@ -210,17 +210,17 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 | 5.4 | Accreditation artifacts | `docs/mdpa/ACCREDITATION-PACKAGE.md` | ✅ Done |
 | 5.5 | MDPAF compliance matrix | `docs/FORGE-MDPAF-COMPLIANCE.md` | ✅ Done |
 
-### PHASE 6: Production Hardening 📋 PLANNED
+### PHASE 6: Production Hardening 🚧 IN Progress
 
 #### 6.1 Kubernetes Deployment
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 6.1.1 | Kind cluster config | `deploy/kind/config.yaml` | 📋 Todo |
-| 6.1.2 | K8s Deployment manifest | `deploy/k8s/forge-c2-deploy.yaml` | 📋 Todo |
-| 6.1.3 | K8s Service manifest | `deploy/k8s/forge-c2-svc.yaml` | 📋 Todo |
-| 6.1.4 | K8s ConfigMap | `deploy/k8s/forge-c2-config.yaml` | 📋 Todo |
-| 6.1.5 | K8s Secret (Kafka, C2BMC) | `deploy/k8s/forge-c2-secret.yaml` | 📋 Todo |
+| 6.1.1 | Kind cluster config | `deploy/kind/config.yaml` | ✅ Done |
+| 6.1.2 | K8s Deployment manifest | `deploy/k8s/forge-c2-deploy.yaml` | ✅ Done |
+| 6.1.3 | K8s Service manifest | `deploy/k8s/forge-c2-svc.yaml` | ✅ Done |
+| 6.1.4 | K8s ConfigMap | `deploy/k8s/forge-c2-config.yaml` | ✅ Done |
+| 6.1.5 | K8s Secret (Kafka, C2BMC) | `deploy/k8s/forge-c2-secret.yaml` | ✅ Done |
 | 6.1.6 | Helm chart | `deploy/helm/forge-c2/` | 📋 Todo |
 
 #### 6.2 High Availability
@@ -228,15 +228,15 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
 | 6.2.1 | HA proxy config | `deploy/haproxy.cfg` | 📋 Todo |
-| 6.2.2 | Health check endpoint | `server.go` `/health` | 📋 Todo |
-| 6.2.3 | Graceful shutdown | `server.go` | 📋 Todo |
+| 6.2.2 | Health check endpoint | `server.go` /health | ✅ Done |
+| 6.2.3 | Graceful shutdown | `server.go` | ✅ Done |
 | 6.2.4 | Kafka consumer group | `internal/kafka.go` | 📋 Todo |
 
 #### 6.3 Monitoring
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 6.3.1 | Prometheus metrics | `internal/metrics.go` | 📋 Todo |
+| 6.3.1 | Prometheus metrics | `internal/metrics.go` | ✅ Done |
 | 6.3.2 | Grafana dashboard | `deploy/grafana/forge-c2.json` | 📋 Todo |
 | 6.3.3 | Alertmanager config | `deploy/alertmanager/alertmanager.yml` | 📋 Todo |
 

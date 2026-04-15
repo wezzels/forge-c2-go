@@ -24,6 +24,7 @@ type Config struct {
 	KafkaBroker    string
 	C2BMCURL       string
 	AllowedOrigins []string
+	Security      SecurityConfig
 	JREAPUDP       string // JREAP UDP listen address (e.g. ":5000")
 	JREAPTCP       string // JREAP TCP listen address (e.g. ":5001")
 }
@@ -43,6 +44,7 @@ type Server struct {
 	clients       map[*websocket.Conn]bool
 	clientMu      sync.RWMutex
 	stopCh        chan struct{}
+	security      *SecurityMiddleware
 }
 
 // TrackStore holds track state
@@ -102,15 +104,14 @@ func NewServer(cfg *Config) (*Server, error) {
 		c2bmc:      NewC2BMCInterface(cfg.C2BMCURL),
 		clients:    make(map[*websocket.Conn]bool),
 		upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool {
-				return true // TODO: restrict in production
-			},
+			CheckOrigin: CheckOriginForWS(cfg.AllowedOrigins),
 		},
 	}
 	s.jreapConsumer = NewJREAPConsumer(s.correlator, s.c2bmc, s.trackStore)
 	s.jreapEncoder = jreap.NewEncoder(s.config.Port, "FORGE-C2")
 	s.jreapOutput = make(chan []byte, 256)
 	s.stopCh = make(chan struct{}, 1)
+	s.security = NewSecurityMiddleware(cfg.Security)
 	s.setupRoutes()
 	return s, nil
 }
@@ -162,7 +163,7 @@ func (s *Server) Run() {
 
 	srv := &http.Server{
 		Addr:    addr,
-		Handler: s.router,
+		Handler: s.security.Wrap(s.router),
 	}
 
 	// Graceful shutdown on signal
