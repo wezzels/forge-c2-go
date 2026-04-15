@@ -77,6 +77,17 @@ go test ./internal/conformance/... -v -run "Stress"
 
 See [docs/deployment/README.md](docs/deployment/README.md) for Kubernetes and Docker deployment.
 
+## C2 Landscape
+
+FORGE-C2 implements capabilities found in real-world missile defense systems. See [docs/C2-LANDSCAPE.md](docs/C2-LANDSCAPE.md) for a detailed comparison against C2BMC, FORGE (Space Force), Aegis, ICBS, and others.
+
+| System | Role | FORGE-C2 Equivalent |
+|--------|------|---------------------|
+| **C2BMC** (Lockheed/MDA, $847M) | BMDS integration & command | Track correlation + engagement orders |
+| **FORGE** (Space Force/BAE, $151M) | OPIR data processing | Kafka sensor pipeline + track formation |
+| **Aegis Baseline** (Navy) | Ship-based BMD | Aegis shooter simulation |
+| **ICBS** (Israel) | Multi-layer defense C2 | Threat classification + fire control |
+
 ## License
 
 Proprietary - STSGYM LLC
