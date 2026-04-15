@@ -11,8 +11,9 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 
 **Current Status:**
 - Phase 1-2: ✅ Complete
-- Phase 3: 🚧 In Progress
-- Phase 4-6: 📋 Planned
+- Phase 3.1: ✅ Complete, 3.2-3.5: 🚧 In Progress
+- Phase 4.1: ✅ Complete, 4.2-4.3: 📋 Planned
+- Phase 5: ✅ Complete
 
 ---
 
@@ -128,10 +129,10 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 
 | Task ID | Task | File | Sub-task | Status |
 |---------|------|------|----------|--------|
-| 3.1.1 | Register all J-types in encoder | `jreap/encoder.go` | Add J8-J31 registrations | 📋 Todo |
-| 3.1.2 | Register all J-types in decoder | `jreap/decoder.go` | Add J8-J31 registrations | 📋 Todo |
-| 3.1.3 | Error handling | `jreap/encoder.go` | Unregistered type error | 📋 Todo |
-| 3.1.4 | Type assertion with ok-check | `jreap/encoder.go` | Prevent panics | 📋 Todo |
+| 3.1.1 | Register all J-types in encoder | `jreap/encoder.go` | Add J8-J31 registrations | ✅ Done |
+| 3.1.2 | Register all J-types in decoder | `jreap/decoder.go` | Add J8-J31 registrations | ✅ Done |
+| 3.1.3 | Error handling | `jreap/encoder.go` | Unregistered type error | ✅ Done |
+| 3.1.4 | Type assertion with ok-check | `jreap/encoder.go` | Prevent panics | ✅ Done |
 
 #### 3.2 QualityFlags Pipeline
 
@@ -174,12 +175,12 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 4.1.1 | Entity State PDU encoder | `internal/dis/entity_state.go` | 📋 Todo |
-| 4.1.2 | Fire PDU encoder | `internal/dis/fire.go` | 📋 Todo |
-| 4.1.3 | Detonation PDU encoder | `internal/dis/detonation.go` | 📋 Todo |
-| 4.1.4 | DIS Header encoder | `internal/dis/header.go` | 📋 Todo |
-| 4.1.5 | DIS Decoder (incoming) | `internal/dis/decoder.go` | 📋 Todo |
-| 4.1.6 | DIS Roundtrip tests | `internal/dis/*_test.go` | 📋 Todo |
+| 4.1.1 | Entity State PDU encoder | `internal/dis/dis.go` | ✅ Done |
+| 4.1.2 | Fire PDU encoder | `internal/dis/dis.go` | ✅ Done |
+| 4.1.3 | Detonation PDU encoder | `internal/dis/dis.go` | ✅ Done |
+| 4.1.4 | DIS Header encoder | `internal/dis/dis.go` | ✅ Done |
+| 4.1.5 | DIS Decoder (incoming) | `internal/dis/dis.go` | ✅ Done |
+| 4.1.6 | DIS Gateway + Roundtrip tests | `internal/gateway/dis_gateway.go` | ✅ Done |
 
 #### 4.2 HLA Gateway
 
@@ -203,11 +204,11 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 5.1 | Full MDPAF metadata mapping | `mdpa/metadata.go` | 📋 Todo |
-| 5.2 | RMF compliance documentation | `docs/RMF-COMPLIANCE.md` | 📋 Todo |
-| 5.3 | Security STIGs checklist | `docs/STIGS-CHECKLIST.md` | 📋 Todo |
-| 5.4 | Accreditation artifacts | `docs/ACCREDITATION/` | 📋 Todo |
-| 5.5 | MDPAF roundtrip test | `mdpa/metadata_test.go` | 📋 Todo |
+| 5.1 | Full MDPAF metadata mapping | `mdpa/metadata.go` | ✅ Done |
+| 5.2 | RMF compliance documentation | `docs/mdpa/RMF-COMPLIANCE.md` | ✅ Done |
+| 5.3 | Security STIGs checklist | `docs/mdpa/STIGS-CHECKLIST.md` | ✅ Done |
+| 5.4 | Accreditation artifacts | `docs/mdpa/ACCREDITATION-PACKAGE.md` | ✅ Done |
+| 5.5 | MDPAF compliance matrix | `docs/FORGE-MDPAF-COMPLIANCE.md` | ✅ Done |
 
 ### PHASE 6: Production Hardening 📋 PLANNED
 

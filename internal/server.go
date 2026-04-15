@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"forge-c2/jreap"
+	"forge-c2/jreap/jseries"
 )
 
 // Config holds FORGE-C2 server configuration
@@ -37,6 +38,8 @@ type Server struct {
 	kafka         *KafkaBroker
 	c2bmc         *C2BMCInterface
 	jreapConsumer *JREAPConsumer
+	jreapEncoder *jreap.Encoder
+	jreapOutput   chan []byte // outbound JREAP messages
 	clients       map[*websocket.Conn]bool
 	clientMu      sync.RWMutex
 }
@@ -104,6 +107,8 @@ func NewServer(cfg *Config) (*Server, error) {
 		},
 	}
 	s.jreapConsumer = NewJREAPConsumer(s.correlator, s.c2bmc, s.trackStore)
+	s.jreapEncoder = jreap.NewEncoder(s.config.Port, "FORGE-C2")
+	s.jreapOutput = make(chan []byte, 256)
 	s.setupRoutes()
 	return s, nil
 }
@@ -234,6 +239,9 @@ func (s *Server) StartTrackMonitor(ctx context.Context) {
 
 // broadcastTrackUpdate sends a track update to all WebSocket clients
 func (s *Server) broadcastTrackUpdate(track *Track, isNew bool) {
+	// Emit J0 Track Management message via JREAP
+	s.emitJ0TrackManagement(track, isNew)
+
 	msg := map[string]interface{}{
 		"type":   "track_update",
 		"is_new": isNew,
@@ -502,5 +510,92 @@ func (s *Server) handleTCPConnection(conn *jreap.JREAPTCPConn) {
 		if err := s.jreapConsumer.ProcessMessage(frame); err != nil {
 			log.Printf("[JREAP-TCP] Process error: %v", err)
 		}
+	}
+}
+
+// emitJ0TrackManagement generates a J0 Track Management message for a track update.
+func (s *Server) emitJ0TrackManagement(track *Track, isNew bool) {
+	if s.jreapEncoder == nil {
+		return
+	}
+
+	var trackStatus uint8
+	if isNew {
+		trackStatus = 1 // New track
+	} else {
+		trackStatus = 2 // Updated track
+	}
+
+	var forceType uint8
+	switch track.ForceType {
+	case "FRIEND":
+		forceType = 1
+	case "HOSTILE":
+		forceType = 2
+	case "NEUTRAL":
+		forceType = 3
+	default:
+		forceType = 4 // UNKNOWN
+	}
+
+	// Use jseries.J0TrackManagement via EncodeUsing
+	j0 := &jseries.J0TrackManagement{
+		TrackNumber:       track.TrackNumber,
+		TrackStatus:       jseries.TrackManagementStatus(trackStatus),
+		ForceType:         forceType,
+		Time:              time.Now().UTC().Truncate(time.Millisecond),
+		Latitude:          track.Latitude,
+		Longitude:         track.Longitude,
+		Altitude:          track.Altitude,
+		Speed:             track.Speed,
+		Heading:           track.Heading,
+		Quality:           jseries.QualityIndicator{Quality: track.QualityFlags},
+		ParticipantNumber: 0, // Self
+		SensorID:          track.TrackSource,
+		CorrelationID:     track.CorrelationID,
+	}
+
+	encoded, err := s.jreapEncoder.EncodeUsing(jreap.J0_TrackManagement, j0)
+	if err != nil {
+		log.Printf("[JREAP] J0 encode error: %v", err)
+		return
+	}
+
+	select {
+	case s.jreapOutput <- encoded:
+	default:
+		log.Printf("[JREAP] J0 output buffer full, dropping message")
+	}
+}
+
+// emitJ1NetworkInit generates a J1 Network Initialize message.
+func (s *Server) emitJ1NetworkInit() {
+	if s.jreapEncoder == nil {
+		return
+	}
+
+	j1 := &jseries.J1NetworkInit{
+		NetworkID:         1,
+		MessageType:       1,
+		NetworkStatus:     1, // Active
+		ParticipantCount:  1, // Self
+		NodeID:           1,
+		ParticipantNumber: 0,
+		Latitude:         33.7512, // Default site
+		Longitude:        -117.8567,
+		Altitude:         0,
+		Time:             time.Now().UTC().Truncate(time.Millisecond),
+	}
+
+	encoded, err := s.jreapEncoder.EncodeUsing(jreap.J1_NetworkInitialize, j1)
+	if err != nil {
+		log.Printf("[JREAP] J1 encode error: %v", err)
+		return
+	}
+
+	select {
+	case s.jreapOutput <- encoded:
+	default:
+		log.Printf("[JREAP] J1 output buffer full, dropping message")
 	}
 }
