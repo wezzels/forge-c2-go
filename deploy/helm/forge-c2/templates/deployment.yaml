@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "forge-c2.fullname" . }}
+  labels:
+    app: forge-c2
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: forge-c2
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: forge-c2
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: forge-c2
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.port }}
+              name: http
+            - containerPort: {{ .Values.jreapUDPPort }}
+              name: jreap-udp
+              protocol: UDP
+            - containerPort: {{ .Values.jreapTCPPort }}
+              name: jreap-tcp
+            - containerPort: {{ .Values.disPort }}
+              name: dis
+              protocol: UDP
+          env:
+            - name: FORGE_C2_PORT
+              value: "{{ .Values.port }}"
+            - name: KAFKA_BROKER
+              value: "{{ .Values.kafka.broker }}"
+            - name: KAFKA_CONSUMER_GROUP
+              value: "{{ .Values.kafka.consumerGroup }}"
+            - name: C2BMC_URL
+              value: "{{ .Values.c2bmc.url }}"
+            - name: SECURITY_ALLOWED_ORIGINS
+              value: "{{ join "," .Values.security.allowedOrigins }}"
+            - name: SECURITY_RATE_LIMIT
+              value: "{{ .Values.security.rateLimitPerMin }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

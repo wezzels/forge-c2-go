@@ -1,0 +1,56 @@
+groups:
+  - name: forge-c2-alerts
+    rules:
+      - alert: FORGEC2HighErrorRate
+        expr: rate(forge_c2_jreap_encode_errors_total[5m]) + rate(forge_c2_jreap_decode_errors_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FORGE-C2 high JREAP error rate"
+          description: "JREAP errors exceeding 10/min for 5 minutes"
+
+      - alert: FORGEC2NoTracks
+        expr: forge_c2_active_tracks == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FORGE-C2 no active tracks"
+          description: "Zero active tracks for 10 minutes — sensor feed may be down"
+
+      - alert: FORGEC2HighLatency
+        expr: forge_c2_jreap_encode_latency_avg_us > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FORGE-C2 high encode latency"
+          description: "JREAP encode latency above 10ms for 5 minutes"
+
+      - alert: FORGEC2InstanceDown
+        expr: up{job="forge-c2"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "FORGE-C2 instance down"
+          description: "Prometheus cannot reach FORGE-C2 /metrics endpoint"
+
+      - alert: FORGEC2NoSensorEvents
+        expr: rate(forge_c2_sensor_events_processed_total[10m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "FORGE-C2 no sensor events"
+          description: "Zero sensor events processed in 10 minutes"
+
+      - alert: FORGEC2RateLimitExceeded
+        expr: rate(forge_c2_http_errors_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FORGE-C2 high rate of HTTP errors"
+          description: "HTTP errors exceeding 100/min — possible abuse or misconfigured client"

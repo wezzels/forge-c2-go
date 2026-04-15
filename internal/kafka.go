@@ -15,17 +15,25 @@ import (
 
 // KafkaBroker holds the connection to Kafka
 type KafkaBroker struct {
-	brokers      []string
-	writer       *kafka.Writer
-	jreapEncoder *jreap.Encoder
+	brokers        []string
+	writer          *kafka.Writer
+	jreapEncoder    *jreap.Encoder
+	consumerGroupID string
 }
 
 // NewKafkaBroker creates a new Kafka connection
 func NewKafkaBroker(brokers []string) *KafkaBroker {
 	return &KafkaBroker{
-		brokers:      brokers,
-		jreapEncoder: jreap.NewEncoder("FORGE-NODE-0001", "KAFKA-INGEST"),
+		brokers:        brokers,
+		jreapEncoder:   jreap.NewEncoder("FORGE-NODE-0001", "KAFKA-INGEST"),
+		consumerGroupID: "forge-c2-group",
 	}
+}
+
+// SetConsumerGroup sets the Kafka consumer group ID for horizontal scaling.
+// All instances with the same group ID share topic partitions.
+func (k *KafkaBroker) SetConsumerGroup(groupID string) {
+	k.consumerGroupID = groupID
 }
 
 // SensorEvent represents raw sensor data
@@ -103,7 +111,7 @@ func (k *KafkaBroker) ConsumeTopics(ctx context.Context, topics []string, handle
 		reader := kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        k.brokers,
 			Topic:          topic,
-			GroupID:        "forge-c2-" + topic,
+			GroupID:        k.consumerGroupID,
 			MinBytes:       10e3,
 			MaxBytes:       10e6,
 			CommitInterval: time.Second,

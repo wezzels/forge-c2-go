@@ -1,0 +1,47 @@
+replicaCount: 2
+
+image:
+  repository: forge-c2
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+port: 8080
+jreapUDPPort: 5000
+jreapTCPPort: 5001
+disPort: 3000
+
+kafka:
+  broker: "kafka.gms.svc.cluster.local:9092"
+  consumerGroup: "forge-c2-group"
+
+c2bmc:
+  url: "http://c2bmc.gms.svc.cluster.local:5016"
+
+security:
+  allowedOrigins: []
+  rateLimitPerMin: 60
+  rateLimitBurst: 10
+  maxRequestSize: 1048576
+  enableCSRF: true
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+livenessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 10
+readinessProbe:
+  initialDelaySeconds: 3
+  periodSeconds: 5
+
+service:
+  type: ClusterIP
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"

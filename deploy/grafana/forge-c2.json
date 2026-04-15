@@ -1,0 +1,96 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "title": "Active Tracks",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "expr": "forge_c2_active_tracks", "legendFormat": "Tracks" }]
+    },
+    {
+      "title": "Active WS Clients",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [{ "expr": "forge_c2_active_ws_clients", "legendFormat": "Clients" }]
+    },
+    {
+      "title": "Active Engagements",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [{ "expr": "forge_c2_active_engagements", "legendFormat": "Engagements" }]
+    },
+    {
+      "title": "Uptime",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [{ "expr": "forge_c2_uptime_seconds", "legendFormat": "Seconds" }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "Sensor Events Processed",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "rate(forge_c2_sensor_events_processed_total[5m])", "legendFormat": "Events/s" }
+      ]
+    },
+    {
+      "title": "JREAP Encode/Decode Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        { "expr": "rate(forge_c2_jreap_messages_encoded_total[5m])", "legendFormat": "Encoded/s" },
+        { "expr": "rate(forge_c2_jreap_messages_decoded_total[5m])", "legendFormat": "Decoded/s" }
+      ]
+    },
+    {
+      "title": "JREAP Errors",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        { "expr": "rate(forge_c2_jreap_encode_errors_total[5m])", "legendFormat": "Encode Err/s" },
+        { "expr": "rate(forge_c2_jreap_decode_errors_total[5m])", "legendFormat": "Decode Err/s" }
+      ]
+    },
+    {
+      "title": "JREAP Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        { "expr": "forge_c2_jreap_encode_latency_avg_us", "legendFormat": "Encode (μs)" },
+        { "expr": "forge_c2_jreap_decode_latency_avg_us", "legendFormat": "Decode (μs)" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "μs" } }
+    },
+    {
+      "title": "Tracks Created/Dropped",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        { "expr": "rate(forge_c2_tracks_created_total[5m])", "legendFormat": "Created/s" },
+        { "expr": "rate(forge_c2_tracks_dropped_total[5m])", "legendFormat": "Dropped/s" }
+      ]
+    },
+    {
+      "title": "DIS/HLA Traffic",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        { "expr": "rate(forge_c2_dis_pdus_sent_total[5m])", "legendFormat": "DIS Sent/s" },
+        { "expr": "rate(forge_c2_dis_pdus_received_total[5m])", "legendFormat": "DIS Recv/s" },
+        { "expr": "rate(forge_c2_hla_updates_sent_total[5m])", "legendFormat": "HLA Sent/s" },
+        { "expr": "rate(forge_c2_hla_updates_received_total[5m])", "legendFormat": "HLA Recv/s" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["forge-c2", "jreap", "bmds"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "FORGE-C2 Dashboard",
+  "uid": "forge-c2"
+}

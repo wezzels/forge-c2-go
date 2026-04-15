@@ -1,0 +1,8 @@
+apiVersion: v2
+name: forge-c2
+description: FORGE-C2 JREAP-C/Link 16 compliant C2 middleware
+type: application
+version: 1.0.0
+appVersion: "1.0"
+maintainers:
+  - name: STSGYM

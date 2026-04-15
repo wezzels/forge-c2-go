@@ -81,7 +81,7 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 |---------|------|------|---------|-----------|--------|------|
 | 2.1.1 | J0 Track Management | `j0_track_mgmt.go` | ✅ | ✅ | ✅ Done | Roundtrip |
 | 2.1.2 | J1 Network Init | `j1_network_init.go` | ✅ | ✅ | ✅ Done | Roundtrip |
-| 2.1.3 | J2 Surveillance | `j2_surveillance.go` | ✅ | ✅ | ⚠️ WIP | None |
+| 2.1.3 | J2 Surveillance | `j2_surveillance.go` | ✅ | ✅ | ✅ Done | None | None |
 | 2.1.4 | J3 Track Update | `j3_track.go` | ✅ | ✅ | ✅ Done | Roundtrip |
 | 2.1.5 | J4 Engagement Order | `j4_engagement_order.go` | ✅ | ✅ | ✅ Done | Roundtrip |
 | 2.1.6 | J5 Engagement Status | `j5_engagement_status.go` | ✅ | ✅ | ✅ Done | Roundtrip |
@@ -221,24 +221,24 @@ FORGE-C2 implements a JREAP-C/Link 16 compliant missile defense simulation platf
 | 6.1.3 | K8s Service manifest | `deploy/k8s/forge-c2-svc.yaml` | ✅ Done |
 | 6.1.4 | K8s ConfigMap | `deploy/k8s/forge-c2-config.yaml` | ✅ Done |
 | 6.1.5 | K8s Secret (Kafka, C2BMC) | `deploy/k8s/forge-c2-secret.yaml` | ✅ Done |
-| 6.1.6 | Helm chart | `deploy/helm/forge-c2/` | 📋 Todo |
+| 6.1.6 | Helm chart | `deploy/helm/forge-c2/` | ✅ Done |
 
 #### 6.2 High Availability
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
-| 6.2.1 | HA proxy config | `deploy/haproxy.cfg` | 📋 Todo |
+| 6.2.1 | HA proxy config | `deploy/haproxy.cfg` | ✅ Done |
 | 6.2.2 | Health check endpoint | `server.go` /health | ✅ Done |
 | 6.2.3 | Graceful shutdown | `server.go` | ✅ Done |
-| 6.2.4 | Kafka consumer group | `internal/kafka.go` | 📋 Todo |
+| 6.2.4 | Kafka consumer group | `internal/kafka.go` | ✅ Done |
 
 #### 6.3 Monitoring
 
 | Task ID | Task | File | Status |
 |---------|------|------|--------|
 | 6.3.1 | Prometheus metrics | `internal/metrics.go` | ✅ Done |
-| 6.3.2 | Grafana dashboard | `deploy/grafana/forge-c2.json` | 📋 Todo |
-| 6.3.3 | Alertmanager config | `deploy/alertmanager/alertmanager.yml` | 📋 Todo |
+| 6.3.2 | Grafana dashboard | `deploy/grafana/forge-c2.json` | ✅ Done |
+| 6.3.3 | Alertmanager config | `deploy/alertmanager/` | ✅ Done |
 
 ---
 

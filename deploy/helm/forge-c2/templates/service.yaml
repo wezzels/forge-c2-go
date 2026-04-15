@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "forge-c2.fullname" . }}
+  labels:
+    app: forge-c2
+  annotations:
+    {{- toYaml .Values.service.annotations | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}
+    - name: jreap-udp
+      port: {{ .Values.jreapUDPPort }}
+      targetPort: {{ .Values.jreapUDPPort }}
+      protocol: UDP
+    - name: jreap-tcp
+      port: {{ .Values.jreapTCPPort }}
+      targetPort: {{ .Values.jreapTCPPort }}
+    - name: dis
+      port: {{ .Values.disPort }}
+      targetPort: {{ .Values.disPort }}
+      protocol: UDP
+  selector:
+    app: forge-c2
