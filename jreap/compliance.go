@@ -202,3 +202,150 @@ func validWeapon(w string) bool {
 	}
 	return false
 }
+
+// ValidateJ0 validates a J0 Track Management message.
+func ValidateJ0(trackNum uint16, forceType uint8, lat, lon, alt, speed, heading float64) *ComplianceReport {
+	r := &ComplianceReport{MessageType: J0_TrackManagement, CheckedAt: time.Now()}
+	if trackNum > 0xFFFE {
+		r.Errors = append(r.Errors, "TrackNumber must be 0-65534")
+	}
+	if forceType > 4 {
+		r.Errors = append(r.Errors, fmt.Sprintf("ForceType must be 0-4, got %d", forceType))
+	}
+	if lat < -90 || lat > 90 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Latitude out of range [-90,90]: %f", lat))
+	}
+	if lon < -180 || lon > 180 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Longitude out of range [-180,180]: %f", lon))
+	}
+	if heading < 0 || heading > 360 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Heading out of range [0,360]: %f", heading))
+	}
+	r.Valid = len(r.Errors) == 0
+	return r
+}
+
+// ValidateJ7 validates a J7 Platform Data message.
+func ValidateJ7(platformType, platformStatus uint8, lat, lon float64) *ComplianceReport {
+	r := &ComplianceReport{MessageType: J7_Platform, CheckedAt: time.Now()}
+	if platformType == 0 {
+		r.Errors = append(r.Errors, "PlatformType must be non-zero")
+	}
+	if platformStatus > 5 {
+		r.Warnings = append(r.Warnings, fmt.Sprintf("PlatformStatus %d is unusual (expected 0-5)", platformStatus))
+	}
+	if lat < -90 || lat > 90 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Latitude out of range: %f", lat))
+	}
+	if lon < -180 || lon > 180 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Longitude out of range: %f", lon))
+	}
+	r.Valid = len(r.Errors) == 0
+	return r
+}
+
+// ValidateJ8 validates a J8 Radio message.
+func ValidateJ8(trackNum uint16, subtype uint8, msgLen uint16) *ComplianceReport {
+	r := &ComplianceReport{MessageType: J8_Radio, CheckedAt: time.Now()}
+	if trackNum > 0xFFFE {
+		r.Errors = append(r.Errors, "TrackNumber must be 0-65534")
+	}
+	if subtype > 4 {
+		r.Errors = append(r.Errors, fmt.Sprintf("J8 Subtype must be 0-4, got %d", subtype))
+	}
+	if msgLen > 128 {
+		r.Warnings = append(r.Warnings, fmt.Sprintf("MessageLength %d exceeds recommended max 128", msgLen))
+	}
+	r.Valid = len(r.Errors) == 0
+	return r
+}
+
+// ValidateJ9 validates a J9 Electronic Attack message.
+func ValidateJ9(eaType, status uint8) *ComplianceReport {
+	r := &ComplianceReport{MessageType: J9_ElectronicAttack, CheckedAt: time.Now()}
+	if eaType > 5 {
+		r.Errors = append(r.Errors, fmt.Sprintf("EA Type must be 0-5, got %d", eaType))
+	}
+	if status > 3 {
+		r.Warnings = append(r.Warnings, fmt.Sprintf("EA Status %d unusual (expected 0-3)", status))
+	}
+	r.Valid = len(r.Errors) == 0
+	return r
+}
+
+// ValidateJ18 validates a J18 Space Track message.
+func ValidateJ18(trackNum uint16, lat, lon, alt float64) *ComplianceReport {
+	r := &ComplianceReport{MessageType: J18_SpaceTrack, CheckedAt: time.Now()}
+	if trackNum > 0xFFFE {
+		r.Errors = append(r.Errors, "TrackNumber must be 0-65534")
+	}
+	if lat < -90 || lat > 90 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Latitude out of range: %f", lat))
+	}
+	if lon < -180 || lon > 180 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Longitude out of range: %f", lon))
+	}
+	if alt < 100000 {
+		r.Warnings = append(r.Warnings, fmt.Sprintf("Space track altitude %.0f m below 100 km (not space)", alt))
+	}
+	r.Valid = len(r.Errors) == 0
+	return r
+}
+
+// ValidateJ20 validates a J20 Air Track message.
+func ValidateJ20(trackNum uint16, lat, lon, alt, speed float64) *ComplianceReport {
+	r := &ComplianceReport{MessageType: J20_AirTrack, CheckedAt: time.Now()}
+	if trackNum > 0xFFFE {
+		r.Errors = append(r.Errors, "TrackNumber must be 0-65534")
+	}
+	if lat < -90 || lat > 90 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Latitude out of range: %f", lat))
+	}
+	if lon < -180 || lon > 180 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Longitude out of range: %f", lon))
+	}
+	if alt < -500 || alt > 80000 {
+		r.Warnings = append(r.Warnings, fmt.Sprintf("Air track altitude %.0f m unusual", alt))
+	}
+	r.Valid = len(r.Errors) == 0
+	return r
+}
+
+// ValidateJ21 validates a J21 Surface Track message.
+func ValidateJ21(trackNum uint16, lat, lon float64, shipType uint16) *ComplianceReport {
+	r := &ComplianceReport{MessageType: J21_SurfaceTrack, CheckedAt: time.Now()}
+	if trackNum > 0xFFFE {
+		r.Errors = append(r.Errors, "TrackNumber must be 0-65534")
+	}
+	if lat < -90 || lat > 90 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Latitude out of range: %f", lat))
+	}
+	if lon < -180 || lon > 180 {
+		r.Errors = append(r.Errors, fmt.Sprintf("Longitude out of range: %f", lon))
+	}
+	r.Valid = len(r.Errors) == 0
+	return r
+}
+
+// ValidateFullMessage runs all applicable validators for a given message type
+// and returns a combined compliance report.
+func ValidateFullMessage(msgType MessageType, header *Header, payload []byte) *ComplianceReport {
+	r := &ComplianceReport{MessageType: msgType, CheckedAt: time.Now()}
+
+	// Header validation
+	if header != nil {
+		hr := ValidateHeader(header.ProtocolFlags, uint8(msgType), uint32(len(payload)))
+		if !hr.Valid {
+			r.Errors = append(r.Errors, hr.Errors...)
+		}
+	}
+
+	// Payload size check
+	size := msgType.PayloadSize()
+	if size > 0 && len(payload) != size {
+		r.Errors = append(r.Errors, fmt.Sprintf("Payload size mismatch: expected %d, got %d", size, len(payload)))
+	}
+
+	r.Valid = len(r.Errors) == 0
+	return r
+}
