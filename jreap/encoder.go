@@ -94,7 +94,26 @@ func (e *Encoder) EncodeUsing(msgType MessageType, msg interface{}) ([]byte, err
 		return nil, fmt.Errorf("unknown payload size for message type %s", msgType)
 	}
 
-	buf := make([]byte, size)
+	var buf []byte
+	if size < 0 {
+		// Variable-length message: encoder fn must allocate its own buffer
+		// We pass a nil buf and expect the fn to handle it, or we use EncodeJ* helpers
+		switch msgType {
+		case J8_Radio:
+			if m, ok := msg.(*jseries.J8Radio); ok {
+				return e.EncodeJ8(m)
+			}
+		case J31_FileTransfer:
+			if m, ok := msg.(*jseries.J31FileTransfer); ok {
+				return e.EncodeJ31(m)
+			}
+		default:
+			return nil, fmt.Errorf("unhandled variable-length message type %s", msgType)
+		}
+		return nil, fmt.Errorf("type assertion failed for variable-length message type %s", msgType)
+	}
+
+	buf = make([]byte, size)
 	fn(msg, buf)
 	return EncodeFull(buf, uint8(msgType), CRC16)
 }
@@ -138,7 +157,9 @@ func (e *Encoder) registerDefaults() {
 		}
 	}
 	e.registry[J8_Radio] = func(msg interface{}, buf []byte) {
-		// J8 has variable length - handled separately
+		if m, ok := msg.(*jseries.J8Radio); ok {
+			jseries.PackJ8Radio(m, buf)
+		}
 	}
 	e.registry[J9_ElectronicAttack] = func(msg interface{}, buf []byte) {
 		if m, ok := msg.(*jseries.J9ElectronicAttack); ok {
@@ -216,6 +237,10 @@ func (e *Encoder) registerDefaults() {
 		}
 	}
 	e.registry[J31_FileTransfer] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J31FileTransfer); ok {
+			jseries.PackJ31FileTransfer(m, buf)
+		}
+	}
 	e.registry[J19_Component] = func(msg interface{}, buf []byte) {
 		if m, ok := msg.(*jseries.J19Component); ok {
 			jseries.PackJ19Component(m, buf)
@@ -249,10 +274,6 @@ func (e *Encoder) registerDefaults() {
 	e.registry[J25_ProductionLevel] = func(msg interface{}, buf []byte) {
 		if m, ok := msg.(*jseries.J25ProductionLevel); ok {
 			jseries.PackJ25ProductionLevel(m, buf)
-		}
-	}
-		if m, ok := msg.(*jseries.J31FileTransfer); ok {
-			jseries.PackJ31FileTransfer(m, buf)
 		}
 	}
 }

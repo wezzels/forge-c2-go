@@ -126,6 +126,8 @@ func (d *Decoder) registerDefaults() {
 		return jseries.UnpackJ30IFF(payload)
 	}
 	d.registry[J31_FileTransfer] = func(payload []byte) interface{} {
+		return jseries.UnpackJ31FileTransfer(payload)
+	}
 	d.registry[J19_Component] = func(payload []byte) interface{} {
 		return jseries.UnpackJ19Component(payload)
 	}
@@ -146,8 +148,6 @@ func (d *Decoder) registerDefaults() {
 	}
 	d.registry[J25_ProductionLevel] = func(payload []byte) interface{} {
 		return jseries.UnpackJ25ProductionLevel(payload)
-	}
-		return jseries.UnpackJ31FileTransfer(payload)
 	}
 }
 

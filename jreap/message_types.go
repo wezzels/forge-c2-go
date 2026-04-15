@@ -179,7 +179,8 @@ func (m MessageType) PayloadSize() int {
 		return jseries.J6PayloadSize
 	case J7_Platform:
 		return jseries.J7PayloadSize
-	// J8_Radio: variable length - caller must handle
+	case J8_Radio:
+		return -1 // variable length
 	case J9_ElectronicAttack:
 		return jseries.J9PayloadSize
 	case J10_Offset:
@@ -200,6 +201,20 @@ func (m MessageType) PayloadSize() int {
 		return jseries.J17PayloadSize
 	case J18_SpaceTrack:
 		return jseries.J18PayloadSize
+	case J19_Component:
+		return jseries.J19PayloadSize
+	case J20_AirTrack:
+		return jseries.J20PayloadSize
+	case J21_SurfaceTrack:
+		return jseries.J21PayloadSize
+	case J22_SubsurfaceTrack:
+		return jseries.J22PayloadSize
+	case J23_LandTrack:
+		return jseries.J23PayloadSize
+	case J24_ForeignEquipment:
+		return jseries.J24PayloadSize
+	case J25_ProductionLevel:
+		return jseries.J25PayloadSize
 	case J26_Test:
 		return jseries.J26PayloadSize
 	case J27_Time:
@@ -210,7 +225,8 @@ func (m MessageType) PayloadSize() int {
 		return jseries.J29PayloadSize
 	case J30_IFF:
 		return jseries.J30PayloadSize
-	// J31_FileTransfer: variable length
+	case J31_FileTransfer:
+		return -1 // variable length
 	default:
 		return 0
 	}
