@@ -19,7 +19,7 @@ ARG COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 ARG DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Build the binary
-ENV CGO_ENABLED=1
+ENV CGO_ENABLED=0
 ENV GOOS=linux
 ENV GOARCH=amd64
 
@@ -39,6 +39,7 @@ RUN apk add --no-cache \
     ca-certificates \
     tzdata \
     dumb-init \
+    curl \
     && rm -rf /var/cache/apk/*
 
 # Create non-root user
@@ -67,7 +68,7 @@ ENV GIN_MODE=release
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 # Expose ports
 EXPOSE 8080 9090 9091

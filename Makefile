@@ -22,7 +22,7 @@ LDFLAGS := -s -w \
 	-X main.BuildDate=$(BUILD_DATE)
 
 # Directories
-K8S_DIR := k8s
+K8S_DIR := deploy/k8s
 BUILD_DIR := build
 
 all: test build
@@ -106,22 +106,20 @@ kind-load: docker
 ## kind-deploy: Deploy to Kind cluster
 kind-deploy: kind-load
 	@echo "Deploying to Kind..."
-	kubectl apply -f $(K8S_DIR)/namespace.yaml
-	kubectl apply -f $(K8S_DIR)/config.yaml
-	kubectl apply -f $(K8S_DIR)/deployment.yaml
-	kubectl apply -f $(K8S_DIR)/service.yaml
-	kubectl apply -f $(K8S_DIR)/hpa.yaml
-	kubectl apply -f $(K8S_DIR)/monitoring.yaml
+	kubectl create namespace forge-c2 --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -f $(K8S_DIR)/forge-c2-config.yaml
+	kubectl apply -f $(K8S_DIR)/forge-c2-secret.yaml
+	kubectl apply -f $(K8S_DIR)/forge-c2-deploy.yaml
+	kubectl apply -f $(K8S_DIR)/forge-c2-svc.yaml
 	kubectl rollout status deployment/forge-c2 -n forge-c2 --timeout=120s
 
 ## kind-delete: Delete Kind deployment
 kind-delete:
 	@echo "Deleting from Kind..."
-	kubectl delete -f $(K8S_DIR)/monitoring.yaml --ignore-not-found=true
-	kubectl delete -f $(K8S_DIR)/hpa.yaml --ignore-not-found=true
-	kubectl delete -f $(K8S_DIR)/service.yaml --ignore-not-found=true
-	kubectl delete -f $(K8S_DIR)/deployment.yaml --ignore-not-found=true
-	kubectl delete -f $(K8S_DIR)/config.yaml --ignore-not-found=true
+	kubectl delete -f $(K8S_DIR)/forge-c2-svc.yaml --ignore-not-found=true
+	kubectl delete -f $(K8S_DIR)/forge-c2-deploy.yaml --ignore-not-found=true
+	kubectl delete -f $(K8S_DIR)/forge-c2-secret.yaml --ignore-not-found=true
+	kubectl delete -f $(K8S_DIR)/forge-c2-config.yaml --ignore-not-found=true
 	kubectl delete namespace forge-c2 --ignore-not-found=true
 
 ## kind-restart: Restart Kind deployment
@@ -136,7 +134,7 @@ clean:
 ## kind-create: Create Kind cluster
 kind-create:
 	@echo "Creating Kind cluster..."
-	kind create cluster --config $(K8S_DIR)/kind-config.yaml --name forge-c2
+	kind create cluster --config deploy/kind/config.yaml --name forge-c2
 
 ## kind-destroy: Destroy Kind cluster
 kind-destroy:
