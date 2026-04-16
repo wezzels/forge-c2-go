@@ -45,9 +45,10 @@ func runServer() {
 
 	// Create the full FORGE-C2 server
 	server, err := internal.NewServer(&internal.Config{
-		Port:      "8080",
+		Port:        "8080",
 		KafkaBroker: "localhost:9092",
-		C2BMCURL:  "http://localhost:5002",
+		C2BMCURL:    "http://localhost:5002",
+		Security:    internal.DefaultSecurityConfig(),
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create server: %v\n", err)

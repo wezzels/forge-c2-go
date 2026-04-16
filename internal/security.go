@@ -27,8 +27,8 @@ func DefaultSecurityConfig() SecurityConfig {
 	return SecurityConfig{
 		AllowedOrigins:   []string{}, // None by default — must be configured
 		MaxRequestSize:   1 << 20,    // 1 MB
-		RateLimitPerMin:  60,
-		RateLimitBurst:   10,
+		RateLimitPerMin:  600,        // 10/sec — reasonable for API use
+		RateLimitBurst:   50,         // Allow burst for rapid API calls
 		EnableCSRF:       true,
 		CSRFAuthKey:      "", // Must be set from env
 		TrustedProxies:   []string{},
@@ -53,12 +53,14 @@ func NewSecurityMiddleware(config SecurityConfig) *SecurityMiddleware {
 // Wrap applies all security middleware to an http.Handler.
 func (sm *SecurityMiddleware) Wrap(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 1. Rate limiting
+		// 1. Rate limiting (skip for health/metrics/localhost)
 		ip := extractIP(r, sm.config.TrustedProxies)
-		if !sm.rateLimit.Allow(ip) {
-			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
-			sm.rateLimit.Rejects.Add(1)
-			return
+		if r.URL.Path != "/health" && r.URL.Path != "/ready" && r.URL.Path != "/metrics" && ip != "127.0.0.1" && ip != "::1" {
+			if !sm.rateLimit.Allow(ip) {
+				http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+				sm.rateLimit.Rejects.Add(1)
+				return
+			}
 		}
 
 		// 2. Request size limit
