@@ -65,6 +65,9 @@ func (d *Decoder) registerDefaults() {
 	d.registry[J2_Surveillance] = func(payload []byte) interface{} {
 		return jseries.UnpackJ2Surveillance(payload)
 	}
+	d.registry[J3_TrackUpdate] = func(payload []byte) interface{} {
+		return jseries.UnpackJ3TrackUpdate(payload)
+	}
 	d.registry[J4_EngagementOrder] = func(payload []byte) interface{} {
 		return jseries.UnpackJ4EngagementOrder(payload)
 	}

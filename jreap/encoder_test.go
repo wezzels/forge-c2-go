@@ -314,7 +314,9 @@ func TestEncodeUsing_J2(t *testing.T) {
 func TestEncodeUsing_UnknownType(t *testing.T) {
 	encoder := NewEncoder("NODE1", "APP1")
 	
-	_, err := encoder.EncodeUsing(J3_TrackUpdate, nil)
+	// Use a message type that doesn't have a registered encoder
+	unknownType := MessageType(99)
+	_, err := encoder.EncodeUsing(unknownType, nil)
 	if err == nil {
 		t.Error("Expected error for unregistered type")
 	}

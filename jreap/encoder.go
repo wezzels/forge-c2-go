@@ -136,6 +136,11 @@ func (e *Encoder) registerDefaults() {
 			jseries.PackJ2Surveillance(m, buf)
 		}
 	}
+	e.registry[J3_TrackUpdate] = func(msg interface{}, buf []byte) {
+		if m, ok := msg.(*jseries.J3TrackUpdate); ok {
+			jseries.PackJ3TrackUpdate(m, buf)
+		}
+	}
 	e.registry[J4_EngagementOrder] = func(msg interface{}, buf []byte) {
 		if m, ok := msg.(*jseries.J4EngagementOrder); ok {
 			jseries.PackJ4EngagementOrder(m, buf)
