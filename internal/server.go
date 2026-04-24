@@ -15,6 +15,7 @@ import (
 
 	"forge-c2/jreap"
 	"forge-c2/jreap/jseries"
+	"forge-c2/internal/bmdsbridge"
 )
 
 // Config holds FORGE-C2 server configuration
@@ -27,6 +28,7 @@ type Config struct {
 	Security      SecurityConfig
 	JREAPUDP       string // JREAP UDP listen address (e.g. ":5000")
 	JREAPTCP       string // JREAP TCP listen address (e.g. ":5001")
+	BinDir         string // Path to BMDS simulator binaries
 }
 
 // Server is the main HTTP/WebSocket server
@@ -44,6 +46,7 @@ type Server struct {
 	clients       map[*websocket.Conn]bool
 	clientMu      sync.RWMutex
 	stopCh        chan struct{}
+	bmdsBridge   *bmdsbridge.Bridge
 	security      *SecurityMiddleware
 }
 
@@ -111,6 +114,15 @@ func NewServer(cfg *Config) (*Server, error) {
 	s.jreapEncoder = jreap.NewEncoder(s.config.Port, "FORGE-C2")
 	s.jreapOutput = make(chan []byte, 256)
 	s.stopCh = make(chan struct{}, 1)
+
+	// Initialize BMDS bridge
+	if cfg.BinDir != "" {
+		s.bmdsBridge = bmdsbridge.NewBridge(cfg.BinDir, s.handleBMDSTracks)
+		for name, config := range bmdsbridge.DefaultConfigs() {
+			s.bmdsBridge.Register(name, config.Binary, config.Args, config.Period)
+		}
+		go s.bmdsBridge.Start(context.Background())
+	}
 	s.security = NewSecurityMiddleware(cfg.Security)
 	s.setupRoutes()
 	return s, nil
@@ -131,6 +143,7 @@ func (s *Server) setupRoutes() {
 	api := s.router.PathPrefix("/api").Subrouter()
 
 	// Track endpoints
+	// BMDS Simulator bridge\n\ts.router.HandleFunc("/api/v1/bmds/simulators", s.handleBMDSSimulators).Methods("GET")\n\ts.router.HandleFunc("/api/v1/bmds/simulators/{name}/run", s.handleBMDSSimulatorRun).Methods("POST")
 	api.HandleFunc("/tracks", s.handleListTracks).Methods("GET")
 	api.HandleFunc("/tracks/{id}", s.handleGetTrack).Methods("GET")
 	api.HandleFunc("/tracks", s.handleCreateTrack).Methods("POST")
@@ -656,4 +669,68 @@ func (s *Server) emitJ1NetworkInit() {
 	default:
 		log.Printf("[JREAP] J1 output buffer full, dropping message")
 	}
+}
+
+// handleBMDSTracks processes tracks from BMDS simulators
+func (s *Server) handleBMDSTracks(result *bmdsbridge.SimResult) {
+	for _, track := range result.Tracks {
+		t := &Track{
+			TrackID:      track.TrackID,
+			Latitude:     track.Latitude,
+			Longitude:    track.Longitude,
+			Altitude:     track.Altitude,
+			Speed:        track.Speed,
+			Heading:      track.Heading,
+			TrackSource:  track.Source,
+			PlatformType: track.PlatformType,
+			ForceType:    track.ForceType,
+			LastUpdate:   track.Timestamp,
+		}
+		if track.ThreatLevel > 0 {
+			t.ThreatLevel = track.ThreatLevel
+		}
+		s.trackStore.SetTrack(track.TrackID, t)
+		s.broadcastTrackUpdate(t, true)
+	}
+}
+
+// handleBMDSSimulators returns the list of registered simulators
+func (s *Server) handleBMDSSimulators(w http.ResponseWriter, r *http.Request) {
+	if s.bmdsBridge == nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{"simulators": []string{}, "running": false})
+		return
+	}
+	status := s.bmdsBridge.Status()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+
+// handleBMDSSimulatorRun runs a specific simulator on demand
+func (s *Server) handleBMDSSimulatorRun(w http.ResponseWriter, r *http.Request) {
+	if s.bmdsBridge == nil {
+		http.Error(w, "BMDS bridge not configured", http.StatusServiceUnavailable)
+		return
+	}
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	if !s.bmdsBridge.IsRegistered(name) {
+		http.Error(w, "Simulator not found: "+name, http.StatusNotFound)
+		return
+	}
+
+	config := bmdsbridge.DefaultConfigs()[name]
+	if config == nil {
+		http.Error(w, "Config not found: "+name, http.StatusNotFound)
+		return
+	}
+
+	result, err := s.bmdsBridge.RunSimulator(r.Context(), config)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
